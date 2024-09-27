@@ -43,7 +43,7 @@
               <router-link class="nav-link" to="/dashboard/clients">Clientes</router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/vendas">Vendas</router-link>
+              <router-link class="nav-link" to="/dashboard/sales">Vendas</router-link>
             </li>
           </ul>
         </div>

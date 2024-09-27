@@ -88,6 +88,8 @@
           <div class="modal-body">
             <p><strong>Nome:</strong> {{ currentProduct.name }}</p>
             <p><strong>Preço:</strong> {{ currentProduct.price }}</p>
+            <p><strong>Criado em:</strong> {{ currentProduct.createdAt }}</p>
+            <p><strong>Última Atualização:</strong> {{ currentProduct.updatedAt }}</p>
             <!-- Outros detalhes do produto -->
           </div>
           <div class="modal-footer">
@@ -115,7 +117,9 @@ export default {
       currentProduct: {
         id: null,
         name: '',
-        price: 0
+        price: 0,
+        createdAt: '',
+        updatedAt: ''
       },
       errorMessages: []
     };
