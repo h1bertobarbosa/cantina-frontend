@@ -40,7 +40,7 @@
               <router-link class="nav-link" to="/dashboard/products">Produtos</router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/clientes">Clientes</router-link>
+              <router-link class="nav-link" to="/dashboard/clients">Clientes</router-link>
             </li>
             <li class="nav-item">
               <router-link class="nav-link" to="/vendas">Vendas</router-link>

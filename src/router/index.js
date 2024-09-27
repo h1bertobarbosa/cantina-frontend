@@ -4,6 +4,7 @@ import SignIn from '../components/SignIn.vue';
 import DashBoard from '../components/Dashboard.vue';
 import DashboardLayout from '../layouts/DashboardLayout.vue';
 import Products from '../components/Products.vue';
+import Clients from '../components/Clients.vue';
 
 const routes = [
   {
@@ -27,6 +28,9 @@ const routes = [
       {
         path: 'products',
         component: Products
+      }, {
+        path: 'clients',
+        component: Clients
       }
     ]
   }

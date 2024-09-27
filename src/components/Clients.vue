@@ -7,26 +7,28 @@
         </ul>
       </div>
     </div>
-    <h2>Gerenciar Produtos</h2>
-    <button class="btn btn-primary mb-3" @click="addProduct()">Adicionar Produto</button>
+    <h2>Gerenciar Clientes</h2>
+    <button class="btn btn-primary mb-3" @click="addClient()">Adicionar Cliente</button>
 
-    <!-- Tabela de Produtos -->
+    <!-- Tabela de clientes -->
     <table class="table table-bordered">
       <thead>
         <tr>
           <th>Nome</th>
-          <th>Preço</th>
+          <th>Telefone</th>
+          <th>Email</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="product in products" :key="product.id">
-          <td>{{ product.name }}</td>
-          <td>{{ product.price }}</td>
+        <tr v-for="client in clients" :key="client.id">
+          <td>{{ client.name }}</td>
+          <td>{{ client.phone }}</td>
+          <td>{{ client.email }}</td>
           <td>
-            <button class="btn btn-info btn-sm" @click="viewProduct(product)">Detalhes</button>
-            <button class="btn btn-warning btn-sm" @click="editProduct(product)">Editar</button>
-            <button class="btn btn-danger btn-sm" @click="deleteProduct(product.id)">Excluir</button>
+            <button class="btn btn-info btn-sm" @click="viewClient(client)">Detalhes</button>
+            <button class="btn btn-warning btn-sm" @click="editClient(client)">Editar</button>
+            <button class="btn btn-danger btn-sm" @click="deleteClient(client.id)">Excluir</button>
           </td>
         </tr>
       </tbody>
@@ -34,14 +36,14 @@
 
 
 
-    <!-- Modal para Adicionar/Editar Produto -->
-    <div class="modal" tabindex="-1" role="dialog" v-if="showProductModal">
+    <!-- Modal para Adicionar/Editar cliente -->
+    <div class="modal" tabindex="-1" role="dialog" v-if="showClientModal">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
-          <form @submit.prevent="saveProduct">
+          <form @submit.prevent="saveClient">
             <div class="modal-header">
-              <h5 class="modal-title">{{ isEditing ? 'Editar Produto' : 'Adicionar Produto' }}</h5>
-              <button type="button" class="close" @click="closeProductModal" aria-label="Close">
+              <h5 class="modal-title">{{ isEditing ? 'Editar cliente' : 'Adicionar cliente' }}</h5>
+              <button type="button" class="close" @click="closeClientModal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
@@ -55,16 +57,20 @@
               <!-- Campos do formulário -->
               <div class="form-group">
                 <label for="productName">Nome</label>
-                <input type="text" class="form-control" id="productName" v-model="currentProduct.name" required />
+                <input type="text" class="form-control" id="productName" v-model="currentClient.name" required />
               </div>
-              <div class="form-group">
-                <label for="productPrice">Preço</label>
-                <input type="number" class="form-control" id="productPrice" v-model="currentProduct.price" required />
+               <div class="form-group">
+                <label for="productName">Telefone</label>
+                <input type="text" class="form-control" id="productPhone" v-model="currentClient.phone" required />
               </div>
-              <!-- Outros campos do produto podem ser adicionados aqui -->
+               <div class="form-group">
+                <label for="productName">Email</label>
+                <input type="text" class="form-control" id="productEmail" v-model="currentClient.email" required />
+              </div>
+              <!-- Outros campos do cliente podem ser adicionados aqui -->
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" @click="closeProductModal">
+              <button type="button" class="btn btn-secondary" @click="closeClientModal">
                 Cancelar
               </button>
               <button type="submit" class="btn btn-primary">
@@ -75,19 +81,23 @@
         </div>
       </div>
     </div>
+ 
     <!-- Modal para Visualizar Detalhes do Produto -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showDetailsModal">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Detalhes do Produto</h5>
+            <h5 class="modal-title">Detalhes do Cliente</h5>
             <button type="button" class="close" @click="closeDetailsModal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
           <div class="modal-body">
-            <p><strong>Nome:</strong> {{ currentProduct.name }}</p>
-            <p><strong>Preço:</strong> {{ currentProduct.price }}</p>
+            <p><strong>Nome:</strong> {{ currentClient.name }}</p>
+            <p><strong>Telefone:</strong> {{ currentClient.phone }}</p>
+            <p><strong>Email:</strong> {{ currentClient.email }}</p>
+            <p><strong>Criado em:</strong> {{ currentClient.createdAt }}</p>
+            <p><strong>Última Atualização:</strong> {{ currentClient.updatedAt }}</p>
             <!-- Outros detalhes do produto -->
           </div>
           <div class="modal-footer">
@@ -105,30 +115,33 @@ import { authHeader } from '../helper/authHeader';
 
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
-  name: 'Products',
+  name: 'Clients',
   data() {
     return {
-      products: [],
-      showProductModal: false,
+      clients: [],
+      showClientModal: false,
       showDetailsModal: false,
       isEditing: false,
-      currentProduct: {
+      currentClient: {
         id: null,
         name: '',
-        price: 0
+        phone: '',
+        email: '',
+        createdAt: '',
+        updatedAt: ''
       },
       errorMessages: []
     };
   },
   created() {
-    this.fetchProducts();
+    this.fetchClients();
   },
   methods: {
-    // Busca a lista de produtos do backend
-    async fetchProducts() {
+    // Busca a lista de clientes do backend
+    async fetchClients() {
       try {
         console.log(process.env.BASE_URL)
-        const response = await fetch('http://localhost:3000/products', {
+        const response = await fetch('http://localhost:3000/clients', {
           method: 'GET',
           headers: authHeader()
         });
@@ -139,46 +152,46 @@ export default {
               ? errorData.message
               : [errorData.message];
           } else {
-            this.errorMessages = ['Erro ao buscar produtos'];
+            this.errorMessages = ['Erro ao buscar clientes'];
           }
           return;
         }
-        const products = await response.json();
-        this.products = products.data;
+        const clients = await response.json();
+        this.clients = clients.data;
       } catch (error) {
         console.error(error);
-        this.errorMessages = ['Erro ao buscar produtos'];
+        this.errorMessages = ['Erro ao buscar clientes'];
       }
     },
-    // Abre o modal para adicionar um novo produto
-    addProduct() {
+    // Abre o modal para adicionar um novo cliente
+    addClient() {
       this.isEditing = false;
-      this.currentProduct = {
+      this.currentClient = {
         id: null,
         name: '',
         price: 0
       };
-      this.showProductModal = true;
+      this.showClientModal = true;
     },
-    // Abre o modal para editar um produto existente
-    editProduct(product) {
+    // Abre o modal para editar um cliente existente
+    editClient(client) {
       this.isEditing = true;
-      this.currentProduct = { ...product };
-      this.showProductModal = true;
+      this.currentClient = { ...client };
+      this.showClientModal = true;
     },
-    // Salva o produto (adiciona ou atualiza)
-    async saveProduct() {
+    // Salva o cliente (adiciona ou atualiza)
+    async saveClient() {
       this.errorMessages = [];
       try {
-        const method = this.isEditing ? 'PATCH' : 'POST';
+        const method = this.isEditing ? 'PUT' : 'POST';
         const url = this.isEditing
-          ? `http://localhost:3000/products/${this.currentProduct.id}`
-          : 'http://localhost:3000/products';
+          ? `http://localhost:3000/clients/${this.currentClient.id}`
+          : 'http://localhost:3000/clients';
 
         const response = await fetch(url, {
           method: method,
           headers: authHeader(),
-          body: JSON.stringify({...this.currentProduct,price: Number(this.currentProduct.price)})
+          body: JSON.stringify(this.currentClient)
         });
 
         if (!response.ok) {
@@ -193,45 +206,45 @@ export default {
               : [errorData.message];
           } else {
             // Mensagem genérica caso não haja 'message' na resposta
-            this.errorMessages = ['Erro ao salvar o produto.'];
+            this.errorMessages = ['Erro ao salvar o cliente.'];
           }
           return; // Encerra a execução se houver erro
         }
-        this.fetchProducts();
-        this.closeProductModal();
+        this.fetchClients();
+        this.closeClientModal();
       } catch (error) {
         console.error(error);
-        alert('Erro ao salvar o produto2');
+        alert('Erro ao salvar o cliente2');
       }
     },
-    // Deleta um produto
-    async deleteProduct(id) {
-      if (confirm('Tem certeza que deseja excluir este produto?')) {
+    // Deleta um cliente
+    async deleteClient(id) {
+      if (confirm('Tem certeza que deseja excluir este cliente?')) {
         try {
-          const response = await fetch(`http://localhost:3000/products/${id}`, {
+          const response = await fetch(`http://localhost:3000/clients/${id}`, {
             method: 'DELETE',
             headers: authHeader()
           });
           if (!response.ok) {
-            throw new Error('Erro ao excluir o produto');
+            throw new Error('Erro ao excluir o cliente');
           }
-          this.fetchProducts();
+          this.fetchClients();
         } catch (error) {
           console.error(error);
-          alert('Erro ao excluir o produto');
+          alert('Erro ao excluir o cliente');
         }
       }
     },
-    // Visualiza detalhes de um produto
-    viewProduct(product) {
-      this.currentProduct = { ...product };
+    // Visualiza detalhes de um cliente
+    viewClient(client) {
+      this.currentClient = { ...client };
       this.showDetailsModal = true;
     },
-    // Fecha o modal de adicionar/editar produto
-    closeProductModal() {
-      this.showProductModal = false;
+    // Fecha o modal de adicionar/editar cliente
+    closeClientModal() {
+      this.showClientModal = false;
     },
-    // Fecha o modal de detalhes do produto
+    // Fecha o modal de detalhes do cliente
     closeDetailsModal() {
       this.showDetailsModal = false;
     }
