@@ -1,0 +1,290 @@
+<template>
+  <div>
+    <h2>Gerenciar Faturas</h2>
+    <!-- Campo de seleção de cliente -->
+    <div class="form-group">
+      <label for="clientSelect">Filtrar por Cliente:</label>
+      <select id="clientSelect" class="form-control" v-model="selectedClientId" @change="onClientChange">
+        <option value="">Todos os Clientes</option>
+        <option v-for="client in clients" :key="client.id" :value="client.id">
+          {{ client.name }}
+        </option>
+      </select>
+    </div>
+    <!-- Exibição das mensagens de erro gerais -->
+    <div v-if="errorMessages.length" class="alert alert-danger">
+      <ul>
+        <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
+      </ul>
+    </div>
+
+    <!-- Tabela de Faturas -->
+    <table class="table table-bordered table-hover">
+      <thead class="thead-light">
+        <tr>
+          <th>Cliente</th>
+          <th>Descrição</th>
+          <th>Valor</th>
+          <th>Método de Pagamento</th>
+          <th>Pago em</th>
+          <th class="text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="billing in billings" :key="billing.id">
+          <td>{{ billing.clientName }}</td>
+          <td>{{ billing.description }}</td>
+          <td>{{ currency(billing.amount) }}</td>
+          <td>{{ billing.paymentMethod }}</td>
+          <td>{{ formatDate(billing.payedAt) }}</td>
+          <td class="text-center">
+            <button class="btn btn-info btn-sm" @click="viewBilling(billing.id)">
+              <i class="fas fa-eye"></i> Detalhes
+            </button>
+            <button v-if="!billing.payedAt" class="btn btn-success btn-sm" @click="payBilling(billing.id)">
+              <i class="fas fa-dollar-sign"></i> Pagar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Modal para Visualizar Detalhes da Fatura -->
+    <div class="modal" tabindex="-1" role="dialog" v-if="showDetailsModal">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Detalhes da Fatura</h5>
+            <button type="button" class="close" @click="closeDetailsModal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p><strong>ID:</strong> {{ currentBilling.id }}</p>
+            <p><strong>Cliente:</strong> {{ currentBilling.clientName }}</p>
+            <p><strong>Descrição:</strong> {{ currentBilling.description }}</p>
+            <p><strong>Valor:</strong> {{ currency(currentBilling.amount) }}</p>
+            <p><strong>Valor Pago:</strong> {{ currency(currentBilling.amountPayed) }}</p>
+            <p><strong>Método de Pagamento:</strong> {{ currentBilling.paymentMethod }}</p>
+            <p><strong>Pago em:</strong> {{ formatDate(currentBilling.payedAt) }}</p>
+            <p><strong>Criado em:</strong> {{ formatDate(currentBilling.createdAt) }}</p>
+            <!-- Outros detalhes da fatura -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeDetailsModal">
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para Pagar Fatura -->
+    <div class="modal" tabindex="-1" role="dialog" v-if="showPayModal">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <form @submit.prevent="confirmPayBilling">
+            <div class="modal-header">
+              <h5 class="modal-title">Pagar Fatura</h5>
+              <button type="button" class="close" @click="closePayModal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <!-- Exibição das mensagens de erro no modal -->
+              <div v-if="errorMessages.length" class="alert alert-danger">
+                <ul>
+                  <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
+                </ul>
+              </div>
+              <p>Deseja realmente pagar esta fatura?</p>
+              <p><strong>ID:</strong> {{ currentBilling.id }}</p>
+              <p><strong>Descrição:</strong> {{ currentBilling.description }}</p>
+              <p><strong>Valor:</strong> {{ currency(currentBilling.amount) }}</p>
+              <div class="form-group">
+                <label for="paymentMethod">Método de Pagamento</label>
+                <select class="form-control" id="paymentMethod" v-model="paymentMethod" required>
+                  <option value="" disabled>Selecione um método de pagamento</option>
+                  <option value="PIX">PIX</option>
+                  <option value="CASH">Dinheiro</option>
+                  <option value="CREDIT_CARD">Cartão de Crédito</option>
+                  <option value="DEBIT_CARD">Cartão de Débito</option>
+                  <!-- Outros métodos de pagamento -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="amount">Valor a Pagar</label>
+                <input type="number" class="form-control" id="amount" v-model="amount" :max="currentBilling.amount"
+                  required />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" @click="closePayModal">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary">Pagar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { apiService } from '../services/apiService';
+export default {
+  // eslint-disable-next-line vue/multi-word-component-names
+  name: 'Billings',
+  data() {
+    return {
+      billings: [],
+      currentBilling: {},
+      showDetailsModal: false,
+      showPayModal: false,
+      errorMessages: [],
+      paymentMethod: '',
+      amount: 0,
+      clients: [],           // Nova propriedade para armazenar a lista de clientes
+      selectedClientId: ''   // ID do cliente selecionado
+    };
+  },
+  created() {
+    this.fetchBillings();
+    this.fetchClients();
+  },
+  methods: {
+    async fetchClients() {
+      try {
+
+        const response = await apiService.get('/clients');
+        if (!response.ok) {
+          const errorData = await response.json();
+          this.errorMessages.push(
+            errorData.message || 'Erro ao buscar clientes'
+          );
+          return;
+        }
+        const data = await response.json();
+        this.clients = data.data; // Assume que a resposta está dentro de 'data'
+      } catch (error) {
+        console.error(error);
+        this.errorMessages.push('Erro ao buscar clientes');
+      }
+    },
+    // Busca a lista de faturas do backend
+    async fetchBillings(clientId = '') {
+      try {
+        let url = '/billings';
+        if (clientId) {
+          url += `?clientId=${clientId}`;
+        }
+        const response = await apiService.get(url);
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.message) {
+            this.errorMessages = Array.isArray(errorData.message)
+              ? errorData.message
+              : [errorData.message];
+          } else {
+            this.errorMessages = ['Erro ao buscar faturas'];
+          }
+          return;
+        }
+        const data = await response.json();
+        this.billings = data.data; // Assume que a resposta está dentro de 'data'
+      } catch (error) {
+        console.error(error);
+        this.errorMessages = ['Erro ao buscar faturas'];
+      }
+    },
+    // Visualiza detalhes de uma fatura
+    async viewBilling(id) {
+      try {
+        const response = await apiService.get(`/billings/${id}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.message) {
+            this.errorMessages = Array.isArray(errorData.message)
+              ? errorData.message
+              : [errorData.message];
+          } else {
+            this.errorMessages = ['Erro ao buscar detalhes da fatura'];
+          }
+          return;
+        }
+        this.currentBilling = await response.json();
+        this.showDetailsModal = true;
+      } catch (error) {
+        console.error(error);
+        this.errorMessages = ['Erro ao buscar detalhes da fatura'];
+      }
+    },
+    // Abre o modal para pagar uma fatura
+    async payBilling(id) {
+      this.currentBilling = this.billings.find(billing => billing.id === id);
+      this.amount = this.currentBilling.amount;
+      this.paymentMethod = '';
+      this.errorMessages = [];
+      this.showPayModal = true;
+    },
+    // Confirma o pagamento da fatura
+    async confirmPayBilling() {
+      try {
+        const payload = {
+          amount: this.amount,
+          paymentMethod: this.paymentMethod
+        };
+        const response = await apiService.patch(
+          `/billings/${this.currentBilling.id}/pay`,
+          payload
+        );
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.message) {
+            this.errorMessages = Array.isArray(errorData.message)
+              ? errorData.message
+              : [errorData.message];
+          } else {
+            this.errorMessages = ['Erro ao pagar a fatura'];
+          }
+          return;
+        }
+        this.fetchBillings();
+        this.closePayModal();
+      } catch (error) {
+        console.error(error);
+        this.errorMessages = ['Erro ao pagar a fatura'];
+      }
+    },
+    closeDetailsModal() {
+      this.showDetailsModal = false;
+    },
+    closePayModal() {
+      this.showPayModal = false;
+    },
+    formatDate(dateString) {
+      if (!dateString) return 'Não Pago';
+      const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+      return new Date(dateString).toLocaleDateString('pt-BR', options);
+    },
+    currency(value) {
+      return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
+    },
+    onClientChange() {
+      this.fetchBillings(this.selectedClientId);
+    },
+  }
+};
+</script>
+
+<style scoped>
+.modal {
+  display: block;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-dialog {
+  margin-top: 10%;
+}
+</style>

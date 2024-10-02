@@ -111,8 +111,7 @@
 </template>
 
 <script>
-import { authHeader } from '../helper/authHeader';
-
+import { apiService } from '../services/apiService';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Clients',
@@ -140,11 +139,8 @@ export default {
     // Busca a lista de clientes do backend
     async fetchClients() {
       try {
-        console.log(process.env.BASE_URL)
-        const response = await fetch('http://localhost:3000/clients', {
-          method: 'GET',
-          headers: authHeader()
-        });
+    
+        const response = await apiService.get('/clients');
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
@@ -185,14 +181,10 @@ export default {
       try {
         const method = this.isEditing ? 'PUT' : 'POST';
         const url = this.isEditing
-          ? `http://localhost:3000/clients/${this.currentClient.id}`
-          : 'http://localhost:3000/clients';
+          ? `/clients/${this.currentClient.id}`
+          : '/clients';
 
-        const response = await fetch(url, {
-          method: method,
-          headers: authHeader(),
-          body: JSON.stringify(this.currentClient)
-        });
+        const response = await apiService[method](url,this.currentClient);
 
         if (!response.ok) {
           // Captura o corpo da resposta de erro
@@ -221,10 +213,7 @@ export default {
     async deleteClient(id) {
       if (confirm('Tem certeza que deseja excluir este cliente?')) {
         try {
-          const response = await fetch(`http://localhost:3000/clients/${id}`, {
-            method: 'DELETE',
-            headers: authHeader()
-          });
+          const response = await apiService.delete(`/clients/${id}`);
           if (!response.ok) {
             throw new Error('Erro ao excluir o cliente');
           }

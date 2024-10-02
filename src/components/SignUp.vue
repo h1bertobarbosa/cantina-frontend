@@ -1,7 +1,7 @@
 <template>
   <div class="container mt-5">
     <h2>Cadastro</h2>
-       <div v-if="errorMessages.length" class="alert alert-danger">
+    <div v-if="errorMessages.length" class="alert alert-danger">
       <ul>
         <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
       </ul>
@@ -41,6 +41,7 @@
 </template>
 
 <script>
+import { apiService } from '../services/apiService';
 export default {
   name: 'SignUp',
   data() {
@@ -51,11 +52,11 @@ export default {
       name: '',
       email: '',
       password: '',
-      errorMessages: [] 
+      errorMessages: []
     };
   },
   methods: {
-     async submitForm() {
+    async submitForm() {
       this.errorMessages = [];
       const payload = {
         companyName: this.companyName,
@@ -66,16 +67,10 @@ export default {
         password: this.password
       };
 
-          try {
-      const response = await fetch('http://localhost:3000/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      try {
+        const response = await apiService.post('/signup', payload);
 
-            if (!response.ok) {
+        if (!response.ok) {
           // Captura o corpo da resposta de erro
           const errorData = await response.json();
 
@@ -92,13 +87,13 @@ export default {
           return; // Encerra a execução se houver erro
         }
 
-      //const data = await response.json();
-      alert('Cadastro realizado com sucesso!');
-      // Redirecionar ou limpar formulário
-    } catch (error) {
-      console.error(error);
-      alert('Erro ao realizar o cadastro.');
-    }
+        //const data = await response.json();
+        alert('Cadastro realizado com sucesso!');
+        // Redirecionar ou limpar formulário
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao realizar o cadastro.');
+      }
     }
   }
 };

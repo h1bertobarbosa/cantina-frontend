@@ -39,6 +39,7 @@
 </template>
 
 <script>
+import { apiService } from '../services/apiService';
 export default {
   name: 'SignIn',
   data() {
@@ -60,13 +61,7 @@ export default {
       this.isSubmitting = true;
 
       try {
-        const response = await fetch('http://localhost:3000/signin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
+        const response = await apiService.post('/signin', payload);
 
         if (!response.ok) {
           const errorData = await response.json();

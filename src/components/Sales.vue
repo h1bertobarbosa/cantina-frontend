@@ -159,8 +159,7 @@
 </template>
 
 <script>
-import { authHeader } from '../helper/authHeader';
-
+import { apiService } from '../services/apiService';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Sales',
@@ -189,10 +188,7 @@ export default {
     // Busca a lista de vendas do backend
     async fetchSales() {
       try {
-        const response = await fetch('http://localhost:3000/sales', {
-          method: 'GET',
-          headers: authHeader()
-        });
+        const response = await apiService.get('/sales');
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
@@ -214,10 +210,7 @@ export default {
     // Busca a lista de produtos para o formulário
     async fetchProducts() {
       try {
-        const response = await fetch('http://localhost:3000/products', {
-          method: 'GET',
-          headers: authHeader()
-        });
+        const response = await apiService.get('/products');
         if (!response.ok) {
           throw new Error('Erro ao buscar produtos');
         }
@@ -231,10 +224,7 @@ export default {
     // Busca a lista de clientes para o formulário
     async fetchClients() {
       try {
-        const response = await fetch('http://localhost:3000/clients', {
-          method: 'GET',
-          headers: authHeader()
-        });
+        const response = await apiService.get('/clients');
         if (!response.ok) {
           throw new Error('Erro ao buscar clientes');
         }
@@ -272,11 +262,7 @@ export default {
           paymentMethod: this.currentSale.paymentMethod
         };
 
-        const response = await fetch('http://localhost:3000/sales', {
-          method: 'POST',
-          headers: authHeader(),
-          body: JSON.stringify(payload)
-        });
+        const response = await apiService.post('/sales',payload);
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
@@ -304,10 +290,7 @@ export default {
     async deleteSale(id) {
       if (confirm('Tem certeza que deseja excluir esta venda?')) {
         try {
-          const response = await fetch(`http://localhost:3000/sales/${id}`, {
-            method: 'DELETE',
-            headers: authHeader()
-          });
+          const response = await apiService.delete(`/sales/${id}`);
           if (!response.ok) {
             const errorData = await response.json();
             if (errorData.message) {

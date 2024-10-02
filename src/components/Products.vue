@@ -103,8 +103,7 @@
 </template>
 
 <script>
-import { authHeader } from '../helper/authHeader';
-
+import { apiService } from '../services/apiService';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Products',
@@ -131,11 +130,8 @@ export default {
     // Busca a lista de produtos do backend
     async fetchProducts() {
       try {
-        console.log(process.env.BASE_URL)
-        const response = await fetch('http://localhost:3000/products', {
-          method: 'GET',
-          headers: authHeader()
-        });
+
+        const response = await apiService.get('/products');
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
@@ -176,14 +172,10 @@ export default {
       try {
         const method = this.isEditing ? 'PATCH' : 'POST';
         const url = this.isEditing
-          ? `http://localhost:3000/products/${this.currentProduct.id}`
-          : 'http://localhost:3000/products';
+          ? `/products/${this.currentProduct.id}`
+          : '/products';
 
-        const response = await fetch(url, {
-          method: method,
-          headers: authHeader(),
-          body: JSON.stringify({...this.currentProduct,price: Number(this.currentProduct.price)})
-        });
+        const response = await apiService[method](url, { ...this.currentProduct, price: Number(this.currentProduct.price) });
 
         if (!response.ok) {
           // Captura o corpo da resposta de erro
@@ -212,10 +204,7 @@ export default {
     async deleteProduct(id) {
       if (confirm('Tem certeza que deseja excluir este produto?')) {
         try {
-          const response = await fetch(`http://localhost:3000/products/${id}`, {
-            method: 'DELETE',
-            headers: authHeader()
-          });
+          const response = await apiService.delete(`/products/${id}`);
           if (!response.ok) {
             throw new Error('Erro ao excluir o produto');
           }

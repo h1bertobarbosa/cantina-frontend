@@ -6,6 +6,7 @@ import DashboardLayout from "../layouts/DashboardLayout.vue";
 import Products from "../components/Products.vue";
 import Clients from "../components/Clients.vue";
 import Sales from "../components/Sales.vue";
+import Billings from "../components/Billings.vue";
 
 const routes = [
   {
@@ -37,6 +38,10 @@ const routes = [
       {
         path: "sales",
         component: Sales,
+      },
+      {
+        path: "billings",
+        component: Billings,
       },
     ],
   },

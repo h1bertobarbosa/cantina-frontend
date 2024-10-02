@@ -9,7 +9,7 @@
           title="Toggle responsive left sidebar">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand" href="#" title="Admin Template">Admin Template</a>
+        <a class="navbar-brand" href="#" title="Admin Template">Admin</a>
       </div>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsingNavbar">
         <span class="navbar-toggler-icon"></span>
@@ -44,6 +44,9 @@
             </li>
             <li class="nav-item">
               <router-link class="nav-link" to="/dashboard/sales">Vendas</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/dashboard/billings">Faturas</router-link>
             </li>
           </ul>
         </div>
