@@ -39,10 +39,10 @@
           <td>{{ formatDate(billing.payedAt) }}</td>
           <td class="text-center">
             <button class="btn btn-info btn-sm" @click="viewBilling(billing.id)">
-              <i class="fas fa-eye"></i> Detalhes
+              <fa-icon :icon="['fas', 'eye']"/> Detalhes
             </button>
-            <button v-if="!billing.payedAt" class="btn btn-success btn-sm" @click="payBilling(billing.id)">
-              <i class="fas fa-dollar-sign"></i> Pagar
+            <button v-if="!billing.payedAt && billing.amount > 0" class="btn btn-success btn-sm" @click="payBilling(billing.id)">
+              <fa-icon :icon="['fas', 'fa-dollar-sign']"/> Pagar
             </button>
           </td>
         </tr>
@@ -114,7 +114,7 @@
               </div>
               <div class="form-group">
                 <label for="amount">Valor a Pagar</label>
-                <input type="number" class="form-control" id="amount" v-model="amount" :max="currentBilling.amount"
+                <input type="number" class="form-control" id="amount" v-model="amount"
                   required />
               </div>
             </div>
@@ -133,6 +133,7 @@
 
 <script>
 import { apiService } from '../services/apiService';
+import { formatDateHour } from '../utils/formatDate';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Billings',
@@ -145,8 +146,8 @@ export default {
       errorMessages: [],
       paymentMethod: '',
       amount: 0,
-      clients: [],           // Nova propriedade para armazenar a lista de clientes
-      selectedClientId: ''   // ID do cliente selecionado
+      clients: [],           
+      selectedClientId: ''   
     };
   },
   created() {
@@ -156,7 +157,6 @@ export default {
   methods: {
     async fetchClients() {
       try {
-
         const response = await apiService.get('/clients');
         if (!response.ok) {
           const errorData = await response.json();
@@ -166,7 +166,7 @@ export default {
           return;
         }
         const data = await response.json();
-        this.clients = data.data; // Assume que a resposta está dentro de 'data'
+        this.clients = data.data;
       } catch (error) {
         console.error(error);
         this.errorMessages.push('Erro ao buscar clientes');
@@ -265,8 +265,7 @@ export default {
     },
     formatDate(dateString) {
       if (!dateString) return 'Não Pago';
-      const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-      return new Date(dateString).toLocaleDateString('pt-BR', options);
+      return formatDateHour(dateString)
     },
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');

@@ -7,6 +7,7 @@ import Products from "../components/Products.vue";
 import Clients from "../components/Clients.vue";
 import Sales from "../components/Sales.vue";
 import Billings from "../components/Billings.vue";
+import Users from "../components/Users.vue";
 
 const routes = [
   {
@@ -42,6 +43,10 @@ const routes = [
       {
         path: "billings",
         component: Billings,
+      },
+      {
+        path: "users",
+        component: Users,
       },
     ],
   },

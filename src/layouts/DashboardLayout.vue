@@ -48,6 +48,9 @@
             <li class="nav-item">
               <router-link class="nav-link" to="/dashboard/billings">Faturas</router-link>
             </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/dashboard/users">Usuários</router-link>
+            </li>
           </ul>
         </div>
         <!-- Conteúdo Principal -->

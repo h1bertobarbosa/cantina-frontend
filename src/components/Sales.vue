@@ -160,6 +160,7 @@
 
 <script>
 import { apiService } from '../services/apiService';
+import { formatDateHour } from '../utils/formatDate';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Sales',
@@ -316,8 +317,7 @@ export default {
       this.showDetailsModal = false;
     },
     formatDate(dateString) {
-      const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
-      return new Date(dateString).toLocaleDateString('pt-BR', options);
+      return formatDateHour(dateString)
     }
   },
   filters: {
