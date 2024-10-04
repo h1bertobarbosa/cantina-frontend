@@ -39,10 +39,14 @@
           <td>{{ formatDate(billing.payedAt) }}</td>
           <td class="text-center">
             <button class="btn btn-info btn-sm" @click="viewBilling(billing.id)">
-              <fa-icon :icon="['fas', 'eye']"/> Detalhes
+              <fa-icon :icon="['fas', 'eye']" /> Detalhes
             </button>
-            <button v-if="!billing.payedAt && billing.amount > 0" class="btn btn-success btn-sm" @click="payBilling(billing.id)">
-              <fa-icon :icon="['fas', 'fa-dollar-sign']"/> Pagar
+            <button v-if="!billing.payedAt && billing.amount > 0" class="btn btn-success btn-sm"
+              @click="payBilling(billing.id)">
+              <fa-icon :icon="['fas', 'fa-dollar-sign']" /> Pagar
+            </button>
+            <button class="btn btn-primary btn-sm" @click="viewBillingItems(billing.id)">
+              <fa-icon :icon="['fas', 'fa-list']" /> Itens
             </button>
           </td>
         </tr>
@@ -114,8 +118,7 @@
               </div>
               <div class="form-group">
                 <label for="amount">Valor a Pagar</label>
-                <input type="number" class="form-control" id="amount" v-model="amount"
-                  required />
+                <input type="number" class="form-control" id="amount" v-model="amount" required />
               </div>
             </div>
             <div class="modal-footer">
@@ -128,6 +131,55 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal para Visualizar Itens da Fatura -->
+    <div class="modal" tabindex="-1" role="dialog" v-if="showItemsModal">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Itens da Fatura</h5>
+            <button type="button" class="close" @click="closeItemsModal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <!-- Exibição das mensagens de erro no modal -->
+            <div v-if="errorMessages.length" class="alert alert-danger">
+              <ul>
+                <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
+              </ul>
+            </div>
+            <!-- Tabela de Itens da Fatura -->
+            <table class="table table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Método de Pagamento</th>
+                  <th>Criado em</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in billingItems" :key="item.id">
+                  <td>{{ item.clientName }}</td>
+                  <td>{{ item.description }}</td>
+                  <td>{{ formatAmount(item.amount, item.type) }}</td>
+                  <td>{{ item.paymentMethod }}</td>
+                  <td>{{ formatDate(item.createdAt) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeItemsModal">
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -146,8 +198,10 @@ export default {
       errorMessages: [],
       paymentMethod: '',
       amount: 0,
-      clients: [],           
-      selectedClientId: ''   
+      clients: [],
+      selectedClientId: '',
+      showItemsModal: false,
+      billingItems: [],
     };
   },
   created() {
@@ -257,6 +311,26 @@ export default {
         this.errorMessages = ['Erro ao pagar a fatura'];
       }
     },
+    async viewBillingItems(id) {
+      try {
+        const response = await apiService.get(`/billings/${id}/items`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          this.errorMessages = Array.isArray(errorData.message)
+            ? errorData.message
+            : [errorData.message || 'Erro ao buscar itens da fatura'];
+          return;
+        }
+        this.billingItems = await response.json(); // Presume que a resposta é um array de itens
+        this.showItemsModal = true; // Exibe o modal com os itens
+      } catch (error) {
+        console.error(error);
+        this.errorMessages = ['Erro ao buscar itens da fatura'];
+      }
+    },
+    closeItemsModal() {
+      this.showItemsModal = false;
+    },
     closeDetailsModal() {
       this.showDetailsModal = false;
     },
@@ -270,9 +344,23 @@ export default {
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
     },
+    formatAmount(amount, type) {
+      let adjustedAmount = parseFloat(amount);
+      if (type === 'CREDIT') {
+        adjustedAmount = -Math.abs(adjustedAmount);
+      }
+      return this.$options.filters.currency(adjustedAmount);
+    },
     onClientChange() {
       this.fetchBillings(this.selectedClientId);
     },
+  },
+  filters: {
+    currency(value) {
+      const sign = value < 0 ? '-' : '';
+      const amount = Math.abs(value);
+      return `R$ ${sign}${amount.toFixed(2).replace('.', ',')}`;
+    }
   }
 };
 </script>
