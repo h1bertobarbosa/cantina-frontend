@@ -27,7 +27,7 @@
           <td>{{ sale.clientName }}</td>
           <td>{{ sale.description }}</td>
           <td>{{ sale.paymentMethod }}</td>
-          <td>{{ sale.amount }}</td>
+          <td>{{ currency(sale.amount) }}</td>
           <td>{{ formatDate(sale.createdAt) }}</td>
           <td class="text-center">
             <button class="btn btn-info btn-sm" @click="viewSale(sale)">
@@ -62,26 +62,16 @@
               <!-- Campos do formulário -->
               <div class="form-group">
                 <label for="product">Produto</label>
-                <select
-                  class="form-control"
-                  id="product"
-                  v-model="currentSale.productId"
-                  required
-                >
+                <select class="form-control" id="product" v-model="currentSale.productId" required>
                   <option value="" disabled>Selecione um produto</option>
                   <option v-for="product in products" :key="product.id" :value="product.id">
-                    {{ product.name }} - {{ product.price  }}
+                    {{ product.name }} - {{ currency(product.price) }}
                   </option>
                 </select>
               </div>
               <div class="form-group">
                 <label for="client">Cliente</label>
-                <select
-                  class="form-control"
-                  id="client"
-                  v-model="currentSale.clientId"
-                  required
-                >
+                <select class="form-control" id="client" v-model="currentSale.clientId" required>
                   <option value="" disabled>Selecione um cliente</option>
                   <option v-for="client in clients" :key="client.id" :value="client.id">
                     {{ client.name }}
@@ -90,22 +80,11 @@
               </div>
               <div class="form-group">
                 <label for="quantity">Quantidade</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="quantity"
-                  v-model="currentSale.quantity"
-                  required
-                />
+                <input type="number" class="form-control" id="quantity" v-model="currentSale.quantity" required />
               </div>
               <div class="form-group">
                 <label for="paymentMethod">Método de Pagamento</label>
-                <select
-                  class="form-control"
-                  id="paymentMethod"
-                  v-model="currentSale.paymentMethod"
-                  required
-                >
+                <select class="form-control" id="paymentMethod" v-model="currentSale.paymentMethod" required>
                   <option value="" disabled>Selecione um método de pagamento</option>
                   <option value="CASH">Dinheiro</option>
                   <option value="CREDIT_CARD">Cartão de Crédito</option>
@@ -142,9 +121,10 @@
             <p><strong>Cliente:</strong> {{ currentSale.clientName }}</p>
             <p><strong>Descrição:</strong> {{ currentSale.description }}</p>
             <p><strong>Método de Pagamento:</strong> {{ currentSale.paymentMethod }}</p>
-            <p><strong>Valor:</strong> {{ currentSale.amount }}</p>
+            <p><strong>Valor:</strong> {{ currency(currentSale.amount) }}</p>
             <p><strong>Data venda:</strong> {{ formatDate(currentSale.createdAt) }}</p>
-            <p v-if="currentSale.paymentMethod !== 'TO_RECEIVE'"><strong>Data pagamento:</strong> {{ formatDate(currentSale.payedAt) }}</p>
+            <p v-if="currentSale.paymentMethod !== 'TO_RECEIVE'"><strong>Data pagamento:</strong> {{
+              formatDate(currentSale.payedAt) }}</p>
             <!-- Outros detalhes da venda -->
           </div>
           <div class="modal-footer">
@@ -263,7 +243,7 @@ export default {
           paymentMethod: this.currentSale.paymentMethod
         };
 
-        const response = await apiService.post('/sales',payload);
+        const response = await apiService.post('/sales', payload);
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
@@ -318,10 +298,7 @@ export default {
     },
     formatDate(dateString) {
       return formatDateHour(dateString)
-    }
-  },
-  filters: {
-    // Filtro para formatar o valor como moeda
+    },
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
     }
@@ -334,6 +311,7 @@ export default {
   display: block;
   background-color: rgba(0, 0, 0, 0.5);
 }
+
 .modal-dialog {
   margin-top: 10%;
 }
