@@ -170,7 +170,7 @@ export default {
     async saveProduct() {
       this.errorMessages = [];
       try {
-        const method = this.isEditing ? 'PATCH' : 'POST';
+        const method = this.isEditing ? 'patch' : 'post';
         const url = this.isEditing
           ? `/products/${this.currentProduct.id}`
           : '/products';

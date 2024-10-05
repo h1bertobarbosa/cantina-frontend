@@ -59,11 +59,11 @@
                 <label for="productName">Nome</label>
                 <input type="text" class="form-control" id="productName" v-model="currentClient.name" required />
               </div>
-               <div class="form-group">
+              <div class="form-group">
                 <label for="productName">Telefone</label>
                 <input type="text" class="form-control" id="productPhone" v-model="currentClient.phone" required />
               </div>
-               <div class="form-group">
+              <div class="form-group">
                 <label for="productName">Email</label>
                 <input type="text" class="form-control" id="productEmail" v-model="currentClient.email" required />
               </div>
@@ -81,7 +81,7 @@
         </div>
       </div>
     </div>
- 
+
     <!-- Modal para Visualizar Detalhes do Produto -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showDetailsModal">
       <div class="modal-dialog" role="document">
@@ -139,7 +139,7 @@ export default {
     // Busca a lista de clientes do backend
     async fetchClients() {
       try {
-    
+
         const response = await apiService.get('/clients');
         if (!response.ok) {
           const errorData = await response.json();
@@ -179,12 +179,12 @@ export default {
     async saveClient() {
       this.errorMessages = [];
       try {
-        const method = this.isEditing ? 'PUT' : 'POST';
+        const method = this.isEditing ? 'put' : 'post';
         const url = this.isEditing
           ? `/clients/${this.currentClient.id}`
           : '/clients';
 
-        const response = await apiService[method](url,this.currentClient);
+        const response = await apiService[method](url, this.currentClient);
 
         if (!response.ok) {
           // Captura o corpo da resposta de erro
