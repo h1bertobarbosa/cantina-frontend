@@ -59,7 +59,8 @@
               </div>
               <div class="form-group">
                 <label for="productPrice">Preço</label>
-                <input type="number" class="form-control" id="productPrice" v-model="currentProduct.price" required />
+                <CurrencyInput class="form-control" id="amount" v-model.lazy="currentProduct.price" required
+                  :options="{ currency: 'BRL', precision: 2 }" />
               </div>
               <!-- Outros campos do produto podem ser adicionados aqui -->
             </div>
@@ -103,10 +104,12 @@
 </template>
 
 <script>
+import CurrencyInput from './CurrencyInput'
 import { apiService } from '../services/apiService';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Products',
+  components: { CurrencyInput },
   data() {
     return {
       products: [],
@@ -175,7 +178,7 @@ export default {
           ? `/products/${this.currentProduct.id}`
           : '/products';
 
-        const response = await apiService[method](url, { ...this.currentProduct, price: Number(this.currentProduct.price) });
+        const response = await apiService[method](url, { ...this.currentProduct, price: Number(this.currentProduct.price.replace(',', '.').toFixed(2)) });
 
         if (!response.ok) {
           // Captura o corpo da resposta de erro

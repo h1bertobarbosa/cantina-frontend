@@ -118,7 +118,8 @@
               </div>
               <div class="form-group">
                 <label for="amount">Valor a Pagar</label>
-                <input type="number" class="form-control" id="amount" v-model="amount" required />
+                <CurrencyInput class="form-control" id="amount" v-model.lazy="amount" required
+                  :options="{ currency: 'BRL', precision: 2 }" />
               </div>
             </div>
             <div class="modal-footer">
@@ -186,9 +187,11 @@
 <script>
 import { apiService } from '../services/apiService';
 import { formatDateHour } from '../utils/formatDate';
+import CurrencyInput from './CurrencyInput'
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Billings',
+  components: { CurrencyInput },
   data() {
     return {
       billings: [],
@@ -286,7 +289,7 @@ export default {
     async confirmPayBilling() {
       try {
         const payload = {
-          amount: this.amount,
+          amount: Number(this.amount.replace(',', '.').toFixed(2)),
           paymentMethod: this.paymentMethod
         };
         const response = await apiService.patch(

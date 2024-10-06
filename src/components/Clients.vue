@@ -61,7 +61,8 @@
               </div>
               <div class="form-group">
                 <label for="productName">Telefone</label>
-                <input type="text" class="form-control" id="productPhone" v-model="currentClient.phone" required />
+                <input type="text" class="form-control" id="productPhone" v-model="currentClient.phone"
+                  v-mask="'(##) #####-####'" required />
               </div>
               <div class="form-group">
                 <label for="productName">Email</label>
