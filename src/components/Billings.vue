@@ -17,60 +17,64 @@
         <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
       </ul>
     </div>
-
-    <!-- Tabela de Faturas -->
-    <table class="table table-bordered table-hover">
-      <thead class="thead-light">
-        <tr>
-          <th>Cliente</th>
-          <th>Descrição</th>
-          <th>Valor</th>
-          <th>Método de Pagamento</th>
-          <th>Pago em</th>
-          <th class="text-center">Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="billing in billings" :key="billing.id">
-          <td>{{ billing.clientName }}</td>
-          <td>{{ billing.description }}</td>
-          <td>{{ currency(billing.amount) }}</td>
-          <td>{{ billing.paymentMethod }}</td>
-          <td>{{ formatDate(billing.payedAt) }}</td>
-          <td class="text-center">
-            <button class="btn btn-info btn-sm" @click="viewBilling(billing.id)">
-              <fa-icon :icon="['fas', 'eye']" /> Detalhes
-            </button>
-            <button v-if="!billing.payedAt && billing.amount > 0" class="btn btn-success btn-sm"
-              @click="payBilling(billing.id)">
-              <fa-icon :icon="['fas', 'fa-dollar-sign']" /> Pagar
-            </button>
-            <button class="btn btn-primary btn-sm" @click="viewBillingItems(billing.id)">
-              <fa-icon :icon="['fas', 'fa-list']" /> Itens
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <nav aria-label="Paginação">
-      <ul class="pagination justify-content-center">
-        <li class="page-item" :class="{ disabled: pagination.page === 1 }">
-          <a class="page-link" href="#" @click.prevent="goToPage(pagination.page - 1)">
-            Anterior
-          </a>
-        </li>
-        <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
-          <a class="page-link" href="#" @click.prevent="goToPage(page)">
-            {{ page }}
-          </a>
-        </li>
-        <li class="page-item" :class="{ disabled: pagination.page === totalPages }">
-          <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
-            Próximo
-          </a>
-        </li>
-      </ul>
-    </nav>
+    <div v-if="!billings.length" class="card bg-info text-white">
+      <div class="card-body">Nenhuma informação para ser exibida</div>
+    </div>
+    <div v-else>
+      <!-- Tabela de Faturas -->
+      <table class="table table-bordered table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th>Cliente</th>
+            <th>Descrição</th>
+            <th>Valor</th>
+            <th>Método de Pagamento</th>
+            <th>Pago em</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="billing in billings" :key="billing.id">
+            <td>{{ billing.clientName }}</td>
+            <td>{{ billing.description }}</td>
+            <td>{{ currency(billing.amount) }}</td>
+            <td>{{ billing.paymentMethod }}</td>
+            <td>{{ formatDate(billing.payedAt) }}</td>
+            <td class="text-center">
+              <button class="btn btn-info btn-sm" @click="viewBilling(billing.id)">
+                <fa-icon :icon="['fas', 'eye']" /> Detalhes
+              </button>
+              <button v-if="!billing.payedAt && billing.amount > 0" class="btn btn-success btn-sm"
+                @click="payBilling(billing.id)">
+                <fa-icon :icon="['fas', 'fa-dollar-sign']" /> Pagar
+              </button>
+              <button class="btn btn-primary btn-sm" @click="viewBillingItems(billing.id)">
+                <fa-icon :icon="['fas', 'fa-list']" /> Itens
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <nav aria-label="Paginação">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" :class="{ disabled: pagination.page === 1 }">
+            <a class="page-link" href="#" @click.prevent="goToPage(pagination.page - 1)">
+              Anterior
+            </a>
+          </li>
+          <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
+            <a class="page-link" href="#" @click.prevent="goToPage(page)">
+              {{ page }}
+            </a>
+          </li>
+          <li class="page-item" :class="{ disabled: pagination.page === totalPages }">
+            <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
+              Próximo
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
     <!-- Modal para Visualizar Detalhes da Fatura -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showDetailsModal">
       <div class="modal-dialog" role="document">

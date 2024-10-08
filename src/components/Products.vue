@@ -9,9 +9,10 @@
     </div>
     <h2>Gerenciar Produtos</h2>
     <button class="btn btn-primary mb-3" @click="addProduct()">Adicionar Produto</button>
-
-    <!-- Tabela de Produtos -->
-    <table class="table table-bordered">
+    <div v-if="!products.length" class="card bg-info text-white">
+      <div class="card-body">Nenhuma informação para ser exibida</div>
+    </div>
+    <table v-else class="table table-bordered">
       <thead>
         <tr>
           <th>Nome</th>

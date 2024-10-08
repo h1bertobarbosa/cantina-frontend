@@ -10,8 +10,11 @@
     <h2>Gerenciar Clientes</h2>
     <button class="btn btn-primary mb-3" @click="addClient()">Adicionar Cliente</button>
 
+    <div v-if="!clients.length" class="card bg-info text-white">
+      <div class="card-body">Nenhuma informação para ser exibida</div>
+    </div>
     <!-- Tabela de clientes -->
-    <table class="table table-bordered">
+    <table v-else class="table table-bordered">
       <thead>
         <tr>
           <th>Nome</th>

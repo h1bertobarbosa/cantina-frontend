@@ -1,52 +1,43 @@
 import { createWebHistory, createRouter } from "vue-router";
-import SignUp from "../components/SignUp.vue";
-import SignIn from "../components/SignIn.vue";
-import DashBoard from "../components/Dashboard.vue";
-import DashboardLayout from "../layouts/DashboardLayout.vue";
-import Products from "../components/Products.vue";
-import Clients from "../components/Clients.vue";
-import Sales from "../components/Sales.vue";
-import Billings from "../components/Billings.vue";
-import Users from "../components/Users.vue";
 
 const routes = [
   {
     path: "/signup",
-    component: SignUp,
+    component: () => import("../components/SignUp.vue"),
   },
   {
     path: "/signin",
-    component: SignIn,
+    component: () => import("../components/SignIn.vue"),
   },
 
   {
     path: "/dashboard",
-    component: DashboardLayout,
+    component: () => import("../layouts/DashboardLayout.vue"),
     meta: { requiresAuth: true },
     children: [
       {
         path: "/",
-        component: DashBoard,
+        component: () => import("../components/Dashboard.vue"),
       },
       {
         path: "products",
-        component: Products,
+        component: () => import("../components/Products.vue"),
       },
       {
         path: "clients",
-        component: Clients,
+        component: () => import("../components/Clients.vue"),
       },
       {
         path: "sales",
-        component: Sales,
+        component: import("../components/Sales.vue"),
       },
       {
         path: "billings",
-        component: Billings,
+        component: import("../components/Billings.vue"),
       },
       {
         path: "users",
-        component: Users,
+        component: import("../components/Users.vue"),
       },
     ],
   },

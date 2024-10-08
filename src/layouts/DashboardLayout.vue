@@ -61,7 +61,7 @@
     </div>
     <!-- Footer -->
     <footer class="container-fluid">
-      <p class="text-right small">©2024 Minha Empresa</p>
+      <p class="text-right small">©2024 Consolidated Technology</p>
     </footer>
   </div>
 </template>

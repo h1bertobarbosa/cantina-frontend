@@ -9,56 +9,60 @@
         <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
       </ul>
     </div>
-
-    <!-- Tabela de Vendas -->
-    <table class="table table-bordered table-hover">
-      <thead class="thead-light">
-        <tr>
-          <th>Cliente</th>
-          <th>Descrição</th>
-          <th>Método de Pagamento</th>
-          <th>Valor</th>
-          <th>Venda em</th>
-          <th class="text-center">Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="sale in sales" :key="sale.id">
-          <td>{{ sale.clientName }}</td>
-          <td>{{ sale.description }}</td>
-          <td>{{ sale.paymentMethod }}</td>
-          <td>{{ currency(sale.amount) }}</td>
-          <td>{{ formatDate(sale.createdAt) }}</td>
-          <td class="text-center">
-            <button class="btn btn-info btn-sm" @click="viewSale(sale)">
-              <i class="fas fa-eye"></i> Detalhes
-            </button>
-            <button class="btn btn-danger btn-sm" @click="deleteSale(sale.id)">
-              <i class="fas fa-trash-alt"></i> Excluir
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <nav aria-label="Paginação">
-      <ul class="pagination justify-content-center">
-        <li class="page-item" :class="{ disabled: pagination.page === 1 }">
-          <a class="page-link" href="#" @click.prevent="goToPage(pagination.page - 1)">
-            Anterior
-          </a>
-        </li>
-        <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
-          <a class="page-link" href="#" @click.prevent="goToPage(page)">
-            {{ page }}
-          </a>
-        </li>
-        <li :class="{ disabled: pagination.page === totalPages }" class="page-item">
-          <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
-            Próximo
-          </a>
-        </li>
-      </ul>
-    </nav>
+    <div v-if="!sales.length" class="card bg-info text-white">
+      <div class="card-body">Nenhuma informação para ser exibida</div>
+    </div>
+    <div v-else>
+      <!-- Tabela de Vendas -->
+      <table class="table table-bordered table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th>Cliente</th>
+            <th>Descrição</th>
+            <th>Método de Pagamento</th>
+            <th>Valor</th>
+            <th>Venda em</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="sale in sales" :key="sale.id">
+            <td>{{ sale.clientName }}</td>
+            <td>{{ sale.description }}</td>
+            <td>{{ sale.paymentMethod }}</td>
+            <td>{{ currency(sale.amount) }}</td>
+            <td>{{ formatDate(sale.createdAt) }}</td>
+            <td class="text-center">
+              <button class="btn btn-info btn-sm" @click="viewSale(sale)">
+                <i class="fas fa-eye"></i> Detalhes
+              </button>
+              <button class="btn btn-danger btn-sm" @click="deleteSale(sale.id)">
+                <i class="fas fa-trash-alt"></i> Excluir
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <nav aria-label="Paginação">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" :class="{ disabled: pagination.page === 1 }">
+            <a class="page-link" href="#" @click.prevent="goToPage(pagination.page - 1)">
+              Anterior
+            </a>
+          </li>
+          <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
+            <a class="page-link" href="#" @click.prevent="goToPage(page)">
+              {{ page }}
+            </a>
+          </li>
+          <li :class="{ disabled: pagination.page === totalPages }" class="page-item">
+            <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
+              Próximo
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
     <!-- Modal para Adicionar Venda -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showSaleModal">
       <div class="modal-dialog" role="document">
