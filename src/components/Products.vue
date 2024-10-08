@@ -22,7 +22,7 @@
       <tbody>
         <tr v-for="product in products" :key="product.id">
           <td>{{ product.name }}</td>
-          <td>{{ product.price }}</td>
+          <td>{{ currency(product.price) }}</td>
           <td>
             <button class="btn btn-info btn-sm" @click="viewProduct(product)">Detalhes</button>
             <button class="btn btn-warning btn-sm" @click="editProduct(product)">Editar</button>
@@ -178,7 +178,7 @@ export default {
           ? `/products/${this.currentProduct.id}`
           : '/products';
 
-        const response = await apiService[method](url, { ...this.currentProduct, price: Number(this.currentProduct.price.replace(',', '.').toFixed(2)) });
+        const response = await apiService[method](url, this.currentProduct);
 
         if (!response.ok) {
           // Captura o corpo da resposta de erro
@@ -230,10 +230,7 @@ export default {
     // Fecha o modal de detalhes do produto
     closeDetailsModal() {
       this.showDetailsModal = false;
-    }
-  },
-  filters: {
-    // Filtro para formatar o valor como moeda
+    },
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
     }

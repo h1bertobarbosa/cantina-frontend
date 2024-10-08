@@ -40,7 +40,25 @@
         </tr>
       </tbody>
     </table>
-
+    <nav aria-label="Paginação">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" :class="{ disabled: pagination.page === 1 }">
+          <a class="page-link" href="#" @click.prevent="goToPage(pagination.page - 1)">
+            Anterior
+          </a>
+        </li>
+        <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
+          <a class="page-link" href="#" @click.prevent="goToPage(page)">
+            {{ page }}
+          </a>
+        </li>
+        <li :class="{ disabled: pagination.page === totalPages }" class="page-item">
+          <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
+            Próximo
+          </a>
+        </li>
+      </ul>
+    </nav>
     <!-- Modal para Adicionar Venda -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showSaleModal">
       <div class="modal-dialog" role="document">
@@ -157,8 +175,18 @@ export default {
         quantity: 1,
         paymentMethod: ''
       },
-      errorMessages: [] // Para mensagens de erro
+      errorMessages: [],
+      pagination: {
+        page: 1,
+        perPage: 10,
+        total: 0
+      },
     };
+  },
+  computed: {
+    totalPages() {
+      return Math.ceil(this.pagination.total / this.pagination.perPage);
+    }
   },
   created() {
     this.fetchSales();
@@ -167,9 +195,10 @@ export default {
   },
   methods: {
     // Busca a lista de vendas do backend
-    async fetchSales() {
+    async fetchSales(page = 1, perPage = 10) {
       try {
-        const response = await apiService.get('/sales');
+
+        const response = await apiService.get(`/sales?page=${page}&perPage=${perPage}`);
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
@@ -181,8 +210,13 @@ export default {
           }
           return;
         }
-        const salesParsed = await response.json();
-        this.sales = salesParsed.data
+        const data = await response.json();
+        this.sales = data.data;
+        this.pagination = {
+          page: data.meta.page,
+          perPage: data.meta.perPage,
+          total: data.meta.total
+        };
       } catch (error) {
         console.error(error);
         this.errorMessages = ['Erro ao buscar vendas'];
@@ -301,7 +335,14 @@ export default {
     },
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
-    }
+    },
+    goToPage(page) {
+      if (page < 1 || page > this.totalPages) {
+        return;
+      }
+      this.fetchSales(page, this.pagination.perPage);
+      this.pagination.page = page;
+    },
   }
 };
 </script>

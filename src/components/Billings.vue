@@ -52,7 +52,25 @@
         </tr>
       </tbody>
     </table>
-
+    <nav aria-label="Paginação">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" :class="{ disabled: pagination.page === 1 }">
+          <a class="page-link" href="#" @click.prevent="goToPage(pagination.page - 1)">
+            Anterior
+          </a>
+        </li>
+        <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
+          <a class="page-link" href="#" @click.prevent="goToPage(page)">
+            {{ page }}
+          </a>
+        </li>
+        <li class="page-item" :class="{ disabled: pagination.page === totalPages }">
+          <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
+            Próximo
+          </a>
+        </li>
+      </ul>
+    </nav>
     <!-- Modal para Visualizar Detalhes da Fatura -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showDetailsModal">
       <div class="modal-dialog" role="document">
@@ -205,7 +223,17 @@ export default {
       selectedClientId: '',
       showItemsModal: false,
       billingItems: [],
+      pagination: {
+        page: 1,
+        perPage: 10,
+        total: 0
+      },
     };
+  },
+  computed: {
+    totalPages() {
+      return Math.ceil(this.pagination.total / this.pagination.perPage);
+    }
   },
   created() {
     this.fetchBillings();
@@ -230,11 +258,11 @@ export default {
       }
     },
     // Busca a lista de faturas do backend
-    async fetchBillings(clientId = '') {
+    async fetchBillings(page = 1, perPage = 10) {
       try {
-        let url = '/billings';
-        if (clientId) {
-          url += `?clientId=${clientId}`;
+        let url = `/billings?page=${page}&perPage=${perPage}`;
+        if (this.selectedClientId) {
+          url += `&clientId=${this.selectedClientId}`;
         }
         const response = await apiService.get(url);
         if (!response.ok) {
@@ -249,7 +277,12 @@ export default {
           return;
         }
         const data = await response.json();
-        this.billings = data.data; // Assume que a resposta está dentro de 'data'
+        this.billings = data.data;
+        this.pagination = {
+          page: data.meta.page,
+          perPage: data.meta.perPage,
+          total: data.meta.total
+        };
       } catch (error) {
         console.error(error);
         this.errorMessages = ['Erro ao buscar faturas'];
@@ -289,7 +322,7 @@ export default {
     async confirmPayBilling() {
       try {
         const payload = {
-          amount: Number(this.amount.replace(',', '.').toFixed(2)),
+          amount: this.amount,
           paymentMethod: this.paymentMethod
         };
         const response = await apiService.patch(
@@ -355,15 +388,16 @@ export default {
       return this.$options.filters.currency(adjustedAmount);
     },
     onClientChange() {
-      this.fetchBillings(this.selectedClientId);
+      this.pagination.page = 1; // Reseta para a primeira página
+      this.fetchBillings(this.pagination.page, this.pagination.perPage);
     },
-  },
-  filters: {
-    currency(value) {
-      const sign = value < 0 ? '-' : '';
-      const amount = Math.abs(value);
-      return `R$ ${sign}${amount.toFixed(2).replace('.', ',')}`;
-    }
+    goToPage(page) {
+      if (page < 1 || page > this.totalPages) {
+        return;
+      }
+      this.pagination.page = page;
+      this.fetchBillings(this.pagination.page, this.pagination.perPage);
+    },
   }
 };
 </script>
