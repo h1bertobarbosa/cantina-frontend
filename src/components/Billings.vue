@@ -62,12 +62,12 @@
               Anterior
             </a>
           </li>
-          <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
+          <li class="page-item" v-for="page in totalPages()" :key="page" :class="{ active: page === pagination.page }">
             <a class="page-link" href="#" @click.prevent="goToPage(page)">
               {{ page }}
             </a>
           </li>
-          <li class="page-item" :class="{ disabled: pagination.page === totalPages }">
+          <li class="page-item" :class="{ disabled: pagination.page === totalPages() }">
             <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
               Próximo
             </a>
@@ -234,11 +234,6 @@ export default {
       },
     };
   },
-  computed: {
-    totalPages() {
-      return Math.ceil(this.pagination.total / this.pagination.perPage);
-    }
-  },
   created() {
     this.fetchBillings();
     this.fetchClients();
@@ -396,12 +391,15 @@ export default {
       this.fetchBillings(this.pagination.page, this.pagination.perPage);
     },
     goToPage(page) {
-      if (page < 1 || page > this.totalPages) {
+      if (page < 1 || page > this.totalPages()) {
         return;
       }
       this.pagination.page = page;
       this.fetchBillings(this.pagination.page, this.pagination.perPage);
     },
+    totalPages() {
+      return Math.ceil(this.pagination.total / this.pagination.perPage);
+    }
   }
 };
 </script>

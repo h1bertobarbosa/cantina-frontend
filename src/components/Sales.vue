@@ -50,12 +50,12 @@
               Anterior
             </a>
           </li>
-          <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
+          <li class="page-item" v-for="page in totalPages()" :key="page" :class="{ active: page === pagination.page }">
             <a class="page-link" href="#" @click.prevent="goToPage(page)">
               {{ page }}
             </a>
           </li>
-          <li :class="{ disabled: pagination.page === totalPages }" class="page-item">
+          <li :class="{ disabled: pagination.page === totalPages() }" class="page-item">
             <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
               Próximo
             </a>
@@ -163,6 +163,7 @@
 <script>
 import { apiService } from '../services/apiService';
 import { formatDateHour } from '../utils/formatDate';
+
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Sales',
@@ -187,11 +188,7 @@ export default {
       },
     };
   },
-  computed: {
-    totalPages() {
-      return Math.ceil(this.pagination.total / this.pagination.perPage);
-    }
-  },
+
   created() {
     this.fetchSales();
     this.fetchProducts();
@@ -341,12 +338,15 @@ export default {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
     },
     goToPage(page) {
-      if (page < 1 || page > this.totalPages) {
+      if (page < 1 || page > this.totalPages()) {
         return;
       }
       this.fetchSales(page, this.pagination.perPage);
       this.pagination.page = page;
     },
+    totalPages() {
+      return Math.ceil(this.pagination.total / this.pagination.perPage);
+    }
   }
 };
 </script>
