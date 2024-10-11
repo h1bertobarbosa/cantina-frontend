@@ -29,15 +29,15 @@ const routes = [
       },
       {
         path: "sales",
-        component: import("../components/Sales.vue"),
+        component: () => import("../components/Sales.vue"),
       },
       {
         path: "billings",
-        component: import("../components/Billings.vue"),
+        component: () => import("../components/Billings.vue"),
       },
       {
         path: "users",
-        component: import("../components/Users.vue"),
+        component: () => import("../components/Users.vue"),
       },
     ],
   },

@@ -6,8 +6,6 @@ import VueTheMask from 'vue-the-mask';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Importações de scripts
-import 'jquery';
-import 'popper.js';
 import 'bootstrap';
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
