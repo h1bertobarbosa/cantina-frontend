@@ -1,7 +1,8 @@
 import { createApp } from 'vue'
+import VueTheMask from 'vue-the-mask';
+import store from './store';
 import App from './App.vue'
 import router from './router'
-import VueTheMask from 'vue-the-mask';
 // Importações de estilos
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -15,6 +16,7 @@ library.add(faEdit, faTrash, faEye, faDollarSign, faList)
 
 const app = createApp(App)
 app.component('fa-icon', FontAwesomeIcon)
+app.use(store)
 app.use(router)
 app.use(VueTheMask)
 app.mount('#app')

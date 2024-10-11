@@ -1,38 +1,62 @@
+// src/services/apiService.js
 import { authHeader } from '../helper/authHeader';
 import { baseUrl } from '../helper/api';
+import store from '../store';
+
+async function fetchWithLoading(url, options) {
+  store.dispatch('startLoading');
+  try {
+    const response = await fetch(url, options);
+    return response;
+  } catch (error) {
+    return Promise.reject(error);
+  } finally {
+    store.dispatch('stopLoading');
+  }
+}
+
 
 export const apiService = {
   get(endpoint) {
-    return fetch(`${baseUrl}${endpoint}`, {
+    return fetchWithLoading(`${baseUrl}${endpoint}`, {
       method: 'GET',
-      headers: authHeader()
+      headers: authHeader(),
     });
   },
   post(endpoint, data) {
-    return fetch(`${baseUrl}${endpoint}`, {
+    return fetchWithLoading(`${baseUrl}${endpoint}`, {
       method: 'POST',
-      headers: authHeader(),
-      body: JSON.stringify(data)
+      headers: {
+        ...authHeader(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
     });
   },
   put(endpoint, data) {
-    return fetch(`${baseUrl}${endpoint}`, {
+    return fetchWithLoading(`${baseUrl}${endpoint}`, {
       method: 'PUT',
-      headers: authHeader(),
-      body: JSON.stringify(data)
+      headers: {
+        ...authHeader(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
     });
   },
   delete(endpoint) {
-    return fetch(`${baseUrl}${endpoint}`, {
+    return fetchWithLoading(`${baseUrl}${endpoint}`, {
       method: 'DELETE',
-      headers: authHeader()
+      headers: authHeader(),
     });
   },
   patch(endpoint, data) {
-    return fetch(`${baseUrl}${endpoint}`, {
+    return fetchWithLoading(`${baseUrl}${endpoint}`, {
       method: 'PATCH',
-      headers: authHeader(),
-      body: JSON.stringify(data)
+      headers: {
+        ...authHeader(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
     });
-  }
+  },
 };

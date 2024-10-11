@@ -1,20 +1,25 @@
 <template>
-  <RouterView /> 
+  <div id="app">
+    <GlobalLoading />
+    <RouterView />
+  </div>
 </template>
 
 <script>
+import GlobalLoading from './components/GlobalLoading.vue';
 
 export default {
   name: 'App',
   components: {
-
-  }
-}
+    GlobalLoading,
+  },
+};
 </script>
 
 <style>
-body, html {
-  height:100%;
+body,
+html {
+  height: 100%;
 }
 
 /*
@@ -30,8 +35,7 @@ body, html {
     transition: all 0.25s ease-out;
   }
 
-  .row-offcanvas-left
-  .sidebar-offcanvas {
+  .row-offcanvas-left .sidebar-offcanvas {
     left: -33%;
   }
 
@@ -53,8 +57,7 @@ body, html {
  * --------------------------------------------------
  */
 @media screen and (max-width: 34em) {
-  .row-offcanvas-left
-  .sidebar-offcanvas {
+  .row-offcanvas-left .sidebar-offcanvas {
     left: -45%;
   }
 
@@ -62,35 +65,34 @@ body, html {
     left: 45%;
     margin-left: -6px;
   }
-  
+
   .sidebar-offcanvas {
     width: 45%;
   }
 }
 
 .card {
-    overflow:hidden;
+  overflow: hidden;
 }
 
 .card-body .rotate {
-    z-index: 8;
-    float: right;
-    height: 100%;
+  z-index: 8;
+  float: right;
+  height: 100%;
 }
 
 .card-body .rotate i {
-    color: rgba(20, 20, 20, 0.15);
-    position: absolute;
-    left: 0;
-    left: auto;
-    right: -10px;
-    bottom: 0;
-    display: block;
-    -webkit-transform: rotate(-44deg);
-    -moz-transform: rotate(-44deg);
-    -o-transform: rotate(-44deg);
-    -ms-transform: rotate(-44deg);
-    transform: rotate(-44deg);
+  color: rgba(20, 20, 20, 0.15);
+  position: absolute;
+  left: 0;
+  left: auto;
+  right: -10px;
+  bottom: 0;
+  display: block;
+  -webkit-transform: rotate(-44deg);
+  -moz-transform: rotate(-44deg);
+  -o-transform: rotate(-44deg);
+  -ms-transform: rotate(-44deg);
+  transform: rotate(-44deg);
 }
-
 </style>
