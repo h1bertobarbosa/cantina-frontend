@@ -56,6 +56,35 @@ export default {
     };
   },
   methods: {
+    async login(payload) {
+      try {
+        const response = await apiService.post('/signin', payload);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.message) {
+            this.errorMessages = Array.isArray(errorData.message)
+              ? errorData.message
+              : [errorData.message];
+          } else {
+            this.errorMessages = ['Erro ao realizar o login.'];
+          }
+          return;
+        }
+
+        const data = await response.json();
+        const accessToken = data.accessToken;
+
+        // Armazenar o accessToken (por exemplo, no localStorage)
+        localStorage.setItem('accessToken', accessToken);
+
+        // Opcional: Redirecionar o usuário para a página inicial ou dashboard
+        this.$router.push('/dashboard'); // Certifique-se de que essa rota existe
+      } catch (error) {
+        console.error(error);
+        this.errorMessages = ['Erro ao realizar o login.'];
+      }
+    },
     async submitForm() {
       this.errorMessages = [];
       const payload = {
@@ -89,6 +118,11 @@ export default {
 
         //const data = await response.json();
         alert('Cadastro realizado com sucesso!');
+
+        await this.login({
+          email: this.email,
+          password: this.password,
+        });
         // Redirecionar ou limpar formulário
       } catch (error) {
         console.error(error);
