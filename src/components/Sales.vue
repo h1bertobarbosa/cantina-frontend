@@ -243,7 +243,7 @@ export default {
     // Busca a lista de clientes para o formulário
     async fetchClients() {
       try {
-        const response = await apiService.get('/clients');
+        const response = await apiService.get('/clients?perPage=300');
         if (!response.ok) {
           throw new Error('Erro ao buscar clientes');
         }
