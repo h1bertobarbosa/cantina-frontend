@@ -4,12 +4,7 @@
     <!-- Campo de seleção de cliente -->
     <div class="form-group">
       <label for="clientSelect">Filtrar por Cliente:</label>
-      <select id="clientSelect" class="form-control" v-model="selectedClientId" @change="onClientChange">
-        <option value="">Todos os Clientes</option>
-        <option v-for="client in clients" :key="client.id" :value="client.id">
-          {{ client.name }}
-        </option>
-      </select>
+      <ClientCombo :clients="clients" @selected="onClientSelected" />
     </div>
     <!-- Exibição das mensagens de erro gerais -->
     <div v-if="errorMessages.length" class="alert alert-danger">
@@ -194,10 +189,11 @@ import { apiService } from '../services/apiService';
 import { formatDateHour } from '../utils/formatDate';
 import CurrencyInput from './CurrencyInput'
 import Pagination from '@/components/Pagination.vue';
+import ClientCombo from '@/components/ClientCombo.vue';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Billings',
-  components: { CurrencyInput, Pagination },
+  components: { CurrencyInput, Pagination, ClientCombo },
   data() {
     return {
       billings: [],
@@ -228,7 +224,7 @@ export default {
   methods: {
     async fetchClients() {
       try {
-        const response = await apiService.get('/clients');
+        const response = await apiService.get('/clients?perPage=500');
         if (!response.ok) {
           const errorData = await response.json();
           this.errorMessages.push(
@@ -378,6 +374,10 @@ export default {
     handlePageChange(newPage) {
       this.currentPage = newPage;
       this.fetchBillings(this.currentPage, this.pageSize);
+    },
+    onClientSelected(clientId) {
+      this.selectedClientId = clientId
+      this.fetchBillings(this.currentPage, this.pageSize)
     }
   }
 };

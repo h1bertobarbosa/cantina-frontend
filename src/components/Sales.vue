@@ -76,12 +76,10 @@
               </div>
               <div class="form-group">
                 <label for="client">Cliente</label>
-                <select class="form-control" id="client" v-model="currentSale.clientId" required>
-                  <option value="" disabled>Selecione um cliente</option>
-                  <option v-for="client in clients" :key="client.id" :value="client.id">
-                    {{ client.name }}
-                  </option>
-                </select>
+                <ClientCombo
+  :clients="clients"
+  @selected="onClientSelected"
+/>
               </div>
               <div class="form-group">
                 <label for="quantity">Quantidade</label>
@@ -146,11 +144,12 @@
 <script>
 import { apiService } from '../services/apiService';
 import { formatDateHour } from '../utils/formatDate';
-import Pagination from '@/components/Pagination.vue'; 
+import Pagination from '@/components/Pagination.vue';
+import ClientCombo from '@/components/ClientCombo.vue';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Sales',
-  components: { Pagination },
+  components: { Pagination, ClientCombo },
   data() {
     return {
       sales: [],
@@ -223,7 +222,7 @@ export default {
     // Busca a lista de clientes para o formulário
     async fetchClients() {
       try {
-        const response = await apiService.get('/clients?perPage=300');
+        const response = await apiService.get('/clients?perPage=500');
         if (!response.ok) {
           throw new Error('Erro ao buscar clientes');
         }
@@ -323,6 +322,9 @@ export default {
     handlePageChange(newPage) {
       this.currentPage = newPage;
       this.fetchSales(this.currentPage, this.pageSize);
+    },
+    onClientSelected(clientId) {
+      this.currentSale.clientId = clientId
     }
   }
 };
