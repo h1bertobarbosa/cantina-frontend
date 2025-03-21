@@ -32,7 +32,7 @@
             <td>{{ sale.description }}</td>
             <td>{{ sale.paymentMethod }}</td>
             <td>{{ currency(sale.amount) }}</td>
-            <td>{{ formatDate(sale.createdAt) }}</td>
+            <td>{{ formatDate(sale.purchasedAt || sale.createdAt) }}</td>
             <td class="text-center">
               <button class="btn btn-info btn-sm" @click="viewSale(sale)">
                 <i class="fas fa-eye"></i> Detalhes
