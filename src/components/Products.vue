@@ -32,7 +32,8 @@
         </tr>
       </tbody>
     </table>
-
+    <pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+      @page-changed="handlePageChange" />
 
 
     <!-- Modal para Adicionar/Editar Produto -->
@@ -107,10 +108,11 @@
 <script>
 import CurrencyInput from './CurrencyInput'
 import { apiService } from '../services/apiService';
+import Pagination from '@/components/Pagination.vue'; 
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Products',
-  components: { CurrencyInput },
+  components: { CurrencyInput,Pagination },
   data() {
     return {
       products: [],
@@ -124,18 +126,26 @@ export default {
         createdAt: '',
         updatedAt: ''
       },
-      errorMessages: []
+      errorMessages: [],
+      currentPage: 1,
+      totalRows: 1,
+      pageSize: 10
     };
   },
   created() {
     this.fetchProducts();
+  },
+  computed: {
+    totalPages() {
+      return Math.ceil(this.totalRows / this.pageSize);
+    }
   },
   methods: {
     // Busca a lista de produtos do backend
     async fetchProducts() {
       try {
 
-        const response = await apiService.get('/products');
+        const response = await apiService.get(`/products?page=${this.currentPage}&perPage=${this.pageSize}`);
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
@@ -149,6 +159,8 @@ export default {
         }
         const products = await response.json();
         this.products = products.data;
+        this.currentPage = parseInt(products.meta.page);
+        this.totalRows = parseInt(products.meta.total) || 1;
       } catch (error) {
         console.error(error);
         this.errorMessages = ['Erro ao buscar produtos'];
@@ -234,6 +246,10 @@ export default {
     },
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
+    },
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchProducts();
     }
   }
 };

@@ -43,25 +43,8 @@
           </tr>
         </tbody>
       </table>
-      <nav aria-label="Paginação">
-        <ul class="pagination justify-content-center">
-          <li class="page-item" :class="{ disabled: pagination.page === 1 }">
-            <a class="page-link" href="#" @click.prevent="goToPage(pagination.page - 1)">
-              Anterior
-            </a>
-          </li>
-          <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
-            <a class="page-link" href="#" @click.prevent="goToPage(page)">
-              {{ page }}
-            </a>
-          </li>
-          <li :class="{ disabled: pagination.page === totalPages }" class="page-item">
-            <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
-              Próximo
-            </a>
-          </li>
-        </ul>
-      </nav>
+      <pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+        @page-changed="handlePageChange" />
     </div>
     <!-- Modal para Adicionar Venda -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showSaleModal">
@@ -163,9 +146,11 @@
 <script>
 import { apiService } from '../services/apiService';
 import { formatDateHour } from '../utils/formatDate';
+import Pagination from '@/components/Pagination.vue'; 
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Sales',
+  components: { Pagination },
   data() {
     return {
       sales: [],
@@ -180,16 +165,14 @@ export default {
         paymentMethod: ''
       },
       errorMessages: [],
-      pagination: {
-        page: 1,
-        perPage: 10,
-        total: 0
-      },
+      currentPage: 1,
+      totalRows: 1,
+      pageSize: 10
     };
   },
   computed: {
     totalPages() {
-      return Math.ceil(this.pagination.total / this.pagination.perPage);
+      return Math.ceil(this.totalRows / this.pageSize);
     }
   },
   created() {
@@ -216,11 +199,8 @@ export default {
         }
         const data = await response.json();
         this.sales = data.data;
-        this.pagination = {
-          page: data.meta.page,
-          perPage: data.meta.perPage,
-          total: data.meta.total
-        };
+        this.currentPage = parseInt(data.meta.page);
+        this.totalRows = parseInt(data.meta.total) || 1;
       } catch (error) {
         console.error(error);
         this.errorMessages = ['Erro ao buscar vendas'];
@@ -340,13 +320,10 @@ export default {
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
     },
-    goToPage(page) {
-      if (page < 1 || page > this.totalPages) {
-        return;
-      }
-      this.fetchSales(page, this.pagination.perPage);
-      this.pagination.page = page;
-    },
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchSales(this.currentPage, this.pageSize);
+    }
   }
 };
 </script>

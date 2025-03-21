@@ -55,25 +55,8 @@
           </tr>
         </tbody>
       </table>
-      <nav aria-label="Paginação">
-        <ul class="pagination justify-content-center">
-          <li class="page-item" :class="{ disabled: pagination.page === 1 }">
-            <a class="page-link" href="#" @click.prevent="goToPage(pagination.page - 1)">
-              Anterior
-            </a>
-          </li>
-          <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === pagination.page }">
-            <a class="page-link" href="#" @click.prevent="goToPage(page)">
-              {{ page }}
-            </a>
-          </li>
-          <li class="page-item" :class="{ disabled: pagination.page === totalPages }">
-            <a class="page-link" href="#" @click.prevent="goToPage(pagination.page + 1)">
-              Próximo
-            </a>
-          </li>
-        </ul>
-      </nav>
+      <Pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+        @page-changed="handlePageChange" />
     </div>
     <!-- Modal para Visualizar Detalhes da Fatura -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showDetailsModal">
@@ -210,10 +193,11 @@
 import { apiService } from '../services/apiService';
 import { formatDateHour } from '../utils/formatDate';
 import CurrencyInput from './CurrencyInput'
+import Pagination from '@/components/Pagination.vue';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Billings',
-  components: { CurrencyInput },
+  components: { CurrencyInput, Pagination },
   data() {
     return {
       billings: [],
@@ -227,16 +211,14 @@ export default {
       selectedClientId: '',
       showItemsModal: false,
       billingItems: [],
-      pagination: {
-        page: 1,
-        perPage: 10,
-        total: 0
-      },
+      currentPage: 1,
+      totalRows: 1,
+      pageSize: 10
     };
   },
   computed: {
     totalPages() {
-      return Math.ceil(this.pagination.total / this.pagination.perPage);
+      return Math.ceil(this.totalRows / this.pageSize);
     }
   },
   created() {
@@ -282,11 +264,8 @@ export default {
         }
         const data = await response.json();
         this.billings = data.data;
-        this.pagination = {
-          page: data.meta.page,
-          perPage: data.meta.perPage,
-          total: data.meta.total
-        };
+        this.currentPage = parseInt(data.meta.page);
+        this.totalRows = parseInt(data.meta.total) || 1;
       } catch (error) {
         console.error(error);
         this.errorMessages = ['Erro ao buscar faturas'];
@@ -392,16 +371,14 @@ export default {
       return this.$options.filters.currency(adjustedAmount);
     },
     onClientChange() {
-      this.pagination.page = 1; // Reseta para a primeira página
-      this.fetchBillings(this.pagination.page, this.pagination.perPage);
+      this.currentPage = 1; // Reseta para a primeira página
+      this.fetchBillings(this.currentPage, this.pageSize);
     },
-    goToPage(page) {
-      if (page < 1 || page > this.totalPages) {
-        return;
-      }
-      this.pagination.page = page;
-      this.fetchBillings(this.pagination.page, this.pagination.perPage);
-    },
+
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchBillings(this.currentPage, this.pageSize);
+    }
   }
 };
 </script>

@@ -1,18 +1,24 @@
 <template>
   <div>
-    <div>
-      <div v-if="errorMessages.length" class="alert alert-danger">
-        <ul>
-          <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
-        </ul>
-      </div>
+    <div v-if="errorMessages.length" class="alert alert-danger">
+      <ul>
+        <li v-for="(error, index) in errorMessages" :key="index">
+          {{ error }}
+        </li>
+      </ul>
     </div>
+
     <h2>Gerenciar Clientes</h2>
-    <button class="btn btn-primary mb-3" @click="addClient()">Adicionar Cliente</button>
+    <button class="btn btn-primary mb-3" @click="addClient">
+      Adicionar Cliente
+    </button>
 
     <div v-if="!clients.length" class="card bg-info text-white">
-      <div class="card-body">Nenhuma informação para ser exibida</div>
+      <div class="card-body">
+        Nenhuma informação para ser exibida
+      </div>
     </div>
+
     <!-- Tabela de clientes -->
     <table v-else class="table table-bordered">
       <thead>
@@ -29,15 +35,22 @@
           <td>{{ client.phone }}</td>
           <td>{{ client.email }}</td>
           <td>
-            <button class="btn btn-info btn-sm" @click="viewClient(client)">Detalhes</button>
-            <button class="btn btn-warning btn-sm" @click="editClient(client)">Editar</button>
-            <button class="btn btn-danger btn-sm" @click="deleteClient(client.id)">Excluir</button>
+            <button class="btn btn-info btn-sm" @click="viewClient(client)">
+              Detalhes
+            </button>
+            <button class="btn btn-warning btn-sm" @click="editClient(client)">
+              Editar
+            </button>
+            <button class="btn btn-danger btn-sm" @click="deleteClient(client.id)">
+              Excluir
+            </button>
           </td>
         </tr>
       </tbody>
     </table>
 
-
+    <pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+      @page-changed="handlePageChange" />
 
     <!-- Modal para Adicionar/Editar cliente -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showClientModal">
@@ -45,7 +58,9 @@
         <div class="modal-content">
           <form @submit.prevent="saveClient">
             <div class="modal-header">
-              <h5 class="modal-title">{{ isEditing ? 'Editar cliente' : 'Adicionar cliente' }}</h5>
+              <h5 class="modal-title">
+                {{ isEditing ? 'Editar cliente' : 'Adicionar cliente' }}
+              </h5>
               <button type="button" class="close" @click="closeClientModal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
@@ -54,7 +69,9 @@
               <!-- Exibição das mensagens de erro -->
               <div v-if="errorMessages.length" class="alert alert-danger">
                 <ul>
-                  <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
+                  <li v-for="(error, index) in errorMessages" :key="index">
+                    {{ error }}
+                  </li>
                 </ul>
               </div>
               <!-- Campos do formulário -->
@@ -105,20 +122,26 @@
             <!-- Outros detalhes do produto -->
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="closeDetailsModal">Fechar</button>
+            <button type="button" class="btn btn-secondary" @click="closeDetailsModal">
+              Fechar
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
-
 </template>
 
 <script>
 import { apiService } from '../services/apiService';
+import Pagination from '@/components/Pagination.vue'; 
+
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Clients',
+  components: {
+    Pagination
+  },
   data() {
     return {
       clients: [],
@@ -133,18 +156,27 @@ export default {
         createdAt: '',
         updatedAt: ''
       },
-      errorMessages: []
+      errorMessages: [],
+      currentPage: 1,
+      totalRows: 1,
+      pageSize: 10 
     };
+  },
+  computed: {
+    totalPages() {
+      return Math.ceil(this.totalRows / this.pageSize);
+    }
   },
   created() {
     this.fetchClients();
   },
   methods: {
-    // Busca a lista de clientes do backend
     async fetchClients() {
       try {
+        // Exemplo de como passar parâmetros de paginação
+        // Ajuste conforme a API do seu backend
+        const response = await apiService.get(`/clients?page=${this.currentPage}&perPage=${this.pageSize}`);
 
-        const response = await apiService.get('/clients');
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
@@ -156,29 +188,38 @@ export default {
           }
           return;
         }
-        const clients = await response.json();
-        this.clients = clients.data;
+
+        const data = await response.json();
+        this.clients = data.data;
+        // Ajuste essas props conforme os nomes retornados pela API
+        this.currentPage = parseInt(data.meta.page);
+        this.totalRows = parseInt(data.meta.total) || 1;
+
       } catch (error) {
         console.error(error);
         this.errorMessages = ['Erro ao buscar clientes'];
       }
     },
+
     // Abre o modal para adicionar um novo cliente
     addClient() {
       this.isEditing = false;
       this.currentClient = {
         id: null,
         name: '',
-        price: 0
+        phone: '',
+        email: ''
       };
       this.showClientModal = true;
     },
+
     // Abre o modal para editar um cliente existente
     editClient(client) {
       this.isEditing = true;
       this.currentClient = { ...client };
       this.showClientModal = true;
     },
+
     // Salva o cliente (adiciona ou atualiza)
     async saveClient() {
       this.errorMessages = [];
@@ -191,28 +232,26 @@ export default {
         const response = await apiService[method](url, this.currentClient);
 
         if (!response.ok) {
-          // Captura o corpo da resposta de erro
           const errorData = await response.json();
-
-          // Verifica se há uma propriedade 'message' na resposta
           if (errorData.message) {
-            // Se 'message' for um array, usa diretamente; se for uma string, coloca em um array
             this.errorMessages = Array.isArray(errorData.message)
               ? errorData.message
               : [errorData.message];
           } else {
-            // Mensagem genérica caso não haja 'message' na resposta
             this.errorMessages = ['Erro ao salvar o cliente.'];
           }
-          return; // Encerra a execução se houver erro
+          return;
         }
-        this.fetchClients();
+
+        // Recarrega a listagem ao salvar
+        await this.fetchClients();
         this.closeClientModal();
       } catch (error) {
         console.error(error);
-        alert('Erro ao salvar o cliente2');
+        alert('Erro ao salvar o cliente');
       }
     },
+
     // Deleta um cliente
     async deleteClient(id) {
       if (confirm('Tem certeza que deseja excluir este cliente?')) {
@@ -228,31 +267,33 @@ export default {
         }
       }
     },
+
     // Visualiza detalhes de um cliente
     viewClient(client) {
       this.currentClient = { ...client };
       this.showDetailsModal = true;
     },
+
     // Fecha o modal de adicionar/editar cliente
     closeClientModal() {
       this.showClientModal = false;
     },
+
     // Fecha o modal de detalhes do cliente
     closeDetailsModal() {
       this.showDetailsModal = false;
-    }
-  },
-  filters: {
-    // Filtro para formatar o valor como moeda
-    currency(value) {
-      return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
+    },
+
+    // Quando o usuário troca de página
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchClients();
     }
   }
 };
 </script>
 
 <style scoped>
-/* Estilos para os modais */
 .modal {
   display: block;
   background-color: rgba(0, 0, 0, 0.5);

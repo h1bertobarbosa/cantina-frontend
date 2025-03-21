@@ -39,7 +39,8 @@
         </tr>
       </tbody>
     </table>
-
+    <pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+      @page-changed="handlePageChange" />
     <!-- Modal para Adicionar/Editar Usuário -->
     <div class="modal" tabindex="-1" role="dialog" v-if="showUserModal">
       <div class="modal-dialog" role="document">
@@ -135,9 +136,11 @@
 <script>
 import { apiService } from '../services/apiService';
 import { formatDateHour } from '../utils/formatDate';
+import Pagination from '@/components/Pagination.vue'; 
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Users',
+  components: { Pagination },
   data() {
     return {
       users: [],
@@ -150,8 +153,16 @@ export default {
         email: '',
         password: ''
       },
-      errorMessages: [] // Para mensagens de erro
+      errorMessages: [],
+      currentPage: 1,
+      totalRows: 1,
+      pageSize: 10
     };
+  },
+  computed: {
+    totalPages() {
+      return Math.ceil(this.totalRows / this.pageSize);
+    }
   },
   created() {
     this.fetchUsers();
@@ -160,7 +171,7 @@ export default {
     // Busca a lista de usuários do backend
     async fetchUsers() {
       try {
-        const response = await apiService.get('/users');
+        const response = await apiService.get(`/users?page=${this.currentPage}&perPage=${this.pageSize}`);
         if (!response.ok) {
           const errorData = await response.json();
           this.errorMessages = Array.isArray(errorData.message)
@@ -170,6 +181,8 @@ export default {
         }
         const data = await response.json();
         this.users = data.data;
+        this.currentPage = parseInt(data.meta.page);
+        this.totalRows = parseInt(data.meta.total) || 1;
       } catch (error) {
         console.error(error);
         this.errorMessages = ['Erro ao buscar usuários'];
@@ -273,6 +286,10 @@ export default {
     },
     formatDate(dateString) {
       return formatDateHour(dateString)
+    },
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchUsers();
     }
   }
 };
