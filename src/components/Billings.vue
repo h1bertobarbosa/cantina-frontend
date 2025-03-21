@@ -368,7 +368,7 @@ export default {
       if (type === 'CREDIT') {
         adjustedAmount = -Math.abs(adjustedAmount);
       }
-      return this.$options.filters.currency(adjustedAmount);
+      return this.currency(adjustedAmount);
     },
     onClientChange() {
       this.currentPage = 1; // Reseta para a primeira página
