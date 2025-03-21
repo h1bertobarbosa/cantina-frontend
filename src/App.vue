@@ -95,4 +95,9 @@ html {
   -ms-transform: rotate(-44deg);
   transform: rotate(-44deg);
 }
+.list-group-item:hover {
+  background-color: #f8f9fa; /* cor de fundo mais clara */
+  font-weight: 600;         /* deixa o texto mais “escuro”/“forte” */
+  cursor: pointer;
+}
 </style>
