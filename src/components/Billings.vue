@@ -167,7 +167,7 @@
                   <td>{{ item.description }}</td>
                   <td>{{ formatAmount(item.amount, item.type) }}</td>
                   <td>{{ item.paymentMethod }}</td>
-                  <td>{{ formatDate(item.createdAt) }}</td>
+                  <td>{{ formatDate(item.purchasedAt || item.createdAt) }}</td>
                 </tr>
               </tbody>
             </table>
