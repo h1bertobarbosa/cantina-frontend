@@ -17,39 +17,39 @@
       <!-- Tabela de Vendas -->
       <table class="table table-bordered table-hover">
         <thead class="thead-light">
-          <tr>
-            <th>Cliente</th>
-            <th>Descrição</th>
-            <th>Método de Pagamento</th>
-            <th>Valor</th>
-            <th>Venda em</th>
-            <th class="text-center">Ações</th>
-          </tr>
+        <tr>
+          <th>Cliente</th>
+          <th>Descrição</th>
+          <th>Método de Pagamento</th>
+          <th>Valor</th>
+          <th>Venda em</th>
+          <th class="text-center">Ações</th>
+        </tr>
         </thead>
         <tbody>
-          <tr v-for="sale in sales" :key="sale.id">
-            <td>{{ sale.clientName }}</td>
-            <td>{{ sale.description }}</td>
-            <td>{{ sale.paymentMethod }}</td>
-            <td>{{ currency(sale.amount) }}</td>
-            <td>{{ formatDate(sale.purchasedAt || sale.createdAt) }}</td>
-            <td class="text-center">
-              <button class="btn btn-info btn-sm" @click="viewSale(sale)">
-                <i class="fas fa-eye"></i> Detalhes
-              </button>
-              <button class="btn btn-danger btn-sm" @click="deleteSale(sale.id)">
-                <i class="fas fa-trash-alt"></i> Excluir
-              </button>
-            </td>
-          </tr>
+        <tr v-for="sale in sales" :key="sale.id">
+          <td>{{ sale.clientName }}</td>
+          <td>{{ sale.description }}</td>
+          <td>{{ sale.paymentMethod }}</td>
+          <td>{{ currency(sale.amount) }}</td>
+          <td>{{ formatDate(sale.purchasedAt || sale.createdAt) }}</td>
+          <td class="text-center">
+            <button class="btn btn-info btn-sm" @click="viewSale(sale)">
+              <i class="fas fa-eye"></i> Detalhes
+            </button>
+            <button class="btn btn-danger btn-sm" @click="deleteSale(sale.id)">
+              <i class="fas fa-trash-alt"></i> Excluir
+            </button>
+          </td>
+        </tr>
         </tbody>
       </table>
 
       <pagination
-        v-if="totalPages > 1"
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        @page-changed="handlePageChange"
+          v-if="totalPages > 1"
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @page-changed="handlePageChange"
       />
     </div>
 
@@ -57,116 +57,138 @@
     <div class="modal" tabindex="-1" role="dialog" v-if="showSaleModal">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
-          <!-- Removemos o botão (X) do cabeçalho, mantendo só Cancelar no rodapé -->
+          <!-- Cabeçalho do modal -->
           <div class="modal-header">
             <h5 class="modal-title">Nova Venda</h5>
           </div>
 
+          <!-- Formulário -->
           <form @submit.prevent="saveSale">
             <div class="modal-body">
-              <!-- Exibição das mensagens de erro no modal -->
+              <!-- Erros no modal -->
               <div v-if="errorMessages.length" class="alert alert-danger">
                 <ul>
                   <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
                 </ul>
               </div>
 
-              <!-- Bloco 1: Produto, Quantidade e Preço -->
-              <div>
-                <h6><b>Produto e Quantidade</b></h6>
-
-                <div class="form-group">
-                  <label for="product">Produto</label>
-                  <select
-                    class="form-control"
-                    id="product"
-                    v-model="currentSale.productId"
-                    required
-                  >
-                    <option value="" disabled>Selecione um produto</option>
-                    <option
-                      v-for="product in products"
-                      :key="product.id"
-                      :value="product.id"
-                    >
-                      {{ product.name }} - {{ currency(product.price) }}
-                    </option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="quantity">Quantidade</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="quantity"
-                    v-model="currentSale.quantity"
-                    min="1"
-                    required
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label for="price">Preço</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    class="form-control"
-                    id="price"
-                    v-model="currentSale.price"
-                  />
-                  <small class="form-text text-muted">
-                    Este valor é preenchido automaticamente, mas pode ser alterado.
-                  </small>
-                </div>
-              </div>
-
-              <hr />
-
-              <!-- Bloco 2: Cliente -->
+              <!-- CLIENTE -->
               <div>
                 <h6><b>Cliente</b></h6>
                 <div class="form-group">
                   <label for="clientCombo">Nome</label>
                   <ClientCombo
-                    id="clientCombo"
-                    :clients="clients"
-                    @selected="onClientSelected"
+                      id="clientCombo"
+                      :clients="clients"
+                      @selected="onClientSelected"
                   />
                 </div>
               </div>
 
               <hr />
 
-              <!-- Bloco 3: Pagamento e Data (opcional) -->
+              <!-- ITENS DA VENDA (LISTA DE PRODUTOS) -->
+              <div>
+                <h6><b>Produtos da Venda</b></h6>
+
+                <!-- Botão para adicionar novo item -->
+                <button
+                    type="button"
+                    class="btn btn-sm btn-secondary mb-2"
+                    @click="addSaleItem"
+                >
+                  + Adicionar Item
+                </button>
+
+                <!-- Tabela com v-for em saleItems -->
+                <table class="table table-sm">
+                  <thead>
+                  <tr>
+                    <th style="width: 35%">Produto</th>
+                    <th style="width: 15%">Qtd</th>
+                    <th style="width: 25%">Preço</th>
+                    <th style="width: 15%">Ação</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr v-for="(item, idx) in currentSale.saleItems" :key="idx">
+                    <td>
+                      <select
+                          class="form-control form-control-sm"
+                          v-model="item.productId"
+                          @change="updatePrice(idx)"
+                          required
+                      >
+                        <option value="" disabled>Selecione</option>
+                        <option
+                            v-for="product in products"
+                            :key="product.id"
+                            :value="product.id"
+                        >
+                          {{ product.name }} - {{ currency(product.price) }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                          type="number"
+                          class="form-control form-control-sm"
+                          min="1"
+                          v-model="item.quantity"
+                          required
+                      />
+                    </td>
+                    <td>
+                      <input
+                          type="number"
+                          step="0.01"
+                          class="form-control form-control-sm"
+                          v-model="item.price"
+                      />
+                    </td>
+                    <td>
+                      <button
+                          type="button"
+                          class="btn btn-sm btn-danger"
+                          @click="removeSaleItem(idx)"
+                      >
+                        Remover
+                      </button>
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <hr />
+
+              <!-- PAGAMENTO E DATA -->
               <div>
                 <h6><b>Pagamento</b></h6>
                 <div class="form-group">
                   <label for="paymentMethod">Método de Pagamento</label>
                   <select
-                    class="form-control"
-                    id="paymentMethod"
-                    v-model="currentSale.paymentMethod"
-                    required
+                      class="form-control"
+                      id="paymentMethod"
+                      v-model="currentSale.paymentMethod"
+                      required
                   >
                     <option value="" disabled>Selecione um método de pagamento</option>
                     <option value="CASH">Dinheiro</option>
                     <option value="CREDIT_CARD">Cartão de Crédito</option>
                     <option value="PIX">PIX</option>
                     <option value="TO_RECEIVE">à Receber</option>
-                    <!-- Outros métodos de pagamento -->
                   </select>
                 </div>
 
                 <div class="form-group">
                   <label for="buyDate">Data da Venda (opcional)</label>
                   <input
-                    type="date"
-                    class="form-control"
-                    id="buyDate"
-                    v-model="currentSale.buyDate"
+                      type="date"
+                      class="form-control"
+                      id="buyDate"
+                      v-model="currentSale.buyDate"
                   />
-                  
                   <small class="form-text text-muted">
                     Caso não seja informada, a data atual será usada.
                   </small>
@@ -174,11 +196,12 @@
               </div>
             </div>
 
+            <!-- Rodapé do modal -->
             <div class="modal-footer">
               <button
-                type="button"
-                class="btn btn-secondary"
-                @click="closeSaleModal"
+                  type="button"
+                  class="btn btn-secondary"
+                  @click="closeSaleModal"
               >
                 Cancelar
               </button>
@@ -195,7 +218,7 @@
     <div class="modal" tabindex="-1" role="dialog" v-if="showDetailsModal">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
-          <!-- Continua igual ao seu código original -->
+          <!-- Continua como seu código original -->
           <div class="modal-header">
             <h5 class="modal-title">Detalhes da Venda</h5>
             <button type="button" class="close" @click="closeDetailsModal" aria-label="Close">
@@ -213,6 +236,13 @@
               <strong>Data pagamento:</strong>
               {{ formatDate(currentSale.payedAt) }}
             </p>
+            <!-- Se quiser exibir os itens, poderia iterar aqui -->
+            <!-- <p>Itens:</p>
+            <ul>
+              <li v-for="item in currentSale.items" :key="item.id">
+                {{ item.productName }} - {{ item.quantity }}x - {{ currency(item.price) }}
+              </li>
+            </ul> -->
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="closeDetailsModal">
@@ -242,19 +272,19 @@ export default {
       clients: [],
       showSaleModal: false,
       showDetailsModal: false,
-      currentSale: {
-        productId: '',
-        clientId: '',
-        quantity: 1,
-        paymentMethod: '',
-        buyDate: '',
-        // Novo campo para o preço, editável pelo usuário
-        price: 0
-      },
       errorMessages: [],
       currentPage: 1,
       totalRows: 1,
-      pageSize: 10
+      pageSize: 10,
+
+      // Objeto representando os campos da venda
+      currentSale: {
+        clientId: '',
+        paymentMethod: '',
+        buyDate: '',
+        // Agora, a venda pode ter vários itens
+        saleItems: []
+      }
     };
   },
   computed: {
@@ -267,31 +297,17 @@ export default {
     this.fetchProducts();
     this.fetchClients();
   },
-  watch: {
-    // Sempre que o productId mudar, atualiza o price
-    'currentSale.productId'(newVal) {
-      const selectedProduct = this.products.find((p) => p.id === newVal);
-      if (selectedProduct) {
-        // Preenche automaticamente com o preço do produto
-        this.currentSale.price = parseFloat(selectedProduct.price);
-      } else {
-        this.currentSale.price = 0;
-      }
-    }
-  },
   methods: {
-    // Busca a lista de vendas do backend
+    // Busca a lista de vendas
     async fetchSales(page = 1, perPage = 10) {
       try {
-        const response = await apiService.get(
-          `/sales?page=${page}&perPage=${perPage}`
-        );
+        const response = await apiService.get(`/sales?page=${page}&perPage=${perPage}`);
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
             this.errorMessages = Array.isArray(errorData.message)
-              ? errorData.message
-              : [errorData.message];
+                ? errorData.message
+                : [errorData.message];
           } else {
             this.errorMessages = ['Erro ao buscar vendas'];
           }
@@ -307,7 +323,7 @@ export default {
       }
     },
 
-    // Busca a lista de produtos para o formulário
+    // Busca produtos
     async fetchProducts() {
       try {
         const response = await apiService.get('/products');
@@ -322,7 +338,7 @@ export default {
       }
     },
 
-    // Busca a lista de clientes para o formulário
+    // Busca clientes
     async fetchClients() {
       try {
         const response = await apiService.get('/clients?perPage=500');
@@ -337,18 +353,44 @@ export default {
       }
     },
 
-    // Abre o modal para adicionar uma nova venda
+    // Abre o modal para nova venda
     addSale() {
+      this.errorMessages = [];
+      // Zera os campos da venda
       this.currentSale = {
-        productId: '',
         clientId: '',
-        quantity: 1,
         paymentMethod: '',
         buyDate: '',
-        price: 0
+        saleItems: []
       };
-      this.errorMessages = [];
+      // Adiciona pelo menos 1 item inicial
+      this.addSaleItem();
       this.showSaleModal = true;
+    },
+
+    // Adiciona um novo item de produto
+    addSaleItem() {
+      this.currentSale.saleItems.push({
+        productId: '',
+        quantity: 1,
+        price: 0
+      });
+    },
+
+    // Remove um item
+    removeSaleItem(index) {
+      this.currentSale.saleItems.splice(index, 1);
+    },
+
+    // Quando muda o produto, atualiza o preço
+    updatePrice(index) {
+      const item = this.currentSale.saleItems[index];
+      const product = this.products.find((p) => p.id === item.productId);
+      if (product) {
+        item.price = parseFloat(product.price);
+      } else {
+        item.price = 0;
+      }
     },
 
     // Salva a venda
@@ -357,13 +399,16 @@ export default {
         this.errorMessages = [];
 
         // Monta o payload
+        // Exemplo de estrutura esperada no backend: { clientId, paymentMethod, buyDate, items: [...] }
         const payload = {
-          productId: this.currentSale.productId,
           clientId: this.currentSale.clientId,
-          price: parseFloat(this.currentSale.price), // Toma o valor do input
-          quantity: this.currentSale.quantity,
           paymentMethod: this.currentSale.paymentMethod,
-          buyDate: this.currentSale.buyDate ? new Date(`${this.currentSale.buyDate} 12:00:00`) : null
+          buyDate: this.currentSale.buyDate || null,
+          items: this.currentSale.saleItems.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            price: parseFloat(item.price)
+          }))
         };
 
         const response = await apiService.post('/sales', payload);
@@ -371,27 +416,30 @@ export default {
           const errorData = await response.json();
           if (errorData.message) {
             this.errorMessages = Array.isArray(errorData.message)
-              ? errorData.message
-              : [errorData.message];
+                ? errorData.message
+                : [errorData.message];
           } else {
             this.errorMessages = ['Erro ao salvar a venda'];
           }
           return;
         }
+
+        // Sucesso ao criar
         this.fetchSales();
         this.closeSaleModal();
       } catch (error) {
+        console.error(error);
         this.errorMessages = ['Erro ao salvar a venda'];
       }
     },
 
-    // Visualiza detalhes de uma venda
+    // Visualiza detalhes
     viewSale(sale) {
       this.currentSale = { ...sale };
       this.showDetailsModal = true;
     },
 
-    // Deleta uma venda
+    // Deleta venda
     async deleteSale(id) {
       if (confirm('Tem certeza que deseja excluir esta venda?')) {
         try {
@@ -400,8 +448,8 @@ export default {
             const errorData = await response.json();
             if (errorData.message) {
               this.errorMessages = Array.isArray(errorData.message)
-                ? errorData.message
-                : [errorData.message];
+                  ? errorData.message
+                  : [errorData.message];
             } else {
               this.errorMessages = ['Erro ao excluir a venda'];
             }
@@ -454,10 +502,6 @@ export default {
 hr {
   margin: 1rem 0;
 }
-modal {
-  display: block;
-  background-color: rgba(0, 0, 0, 0.5);
-}
 
 /* Mantém o diálogo centralizado e com espaço vertical */
 .modal-dialog {
@@ -471,5 +515,4 @@ modal {
   flex: 1 1 auto;
   overflow-y: auto; /* permite rolagem dentro do modal */
 }
-
 </style>
