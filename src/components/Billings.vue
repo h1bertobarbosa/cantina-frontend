@@ -134,7 +134,7 @@
     </div>
 
     <!-- Modal para Visualizar Itens da Fatura -->
-    <div class="modal" tabindex="-1" role="dialog" v-if="showItemsModal">
+    <div  class="modal" tabindex="-1" role="dialog" v-if="showItemsModal">
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -143,7 +143,7 @@
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body table-scroll">
             <!-- Exibição das mensagens de erro no modal -->
             <div v-if="errorMessages.length" class="alert alert-danger">
               <ul>
@@ -151,7 +151,7 @@
               </ul>
             </div>
             <!-- Tabela de Itens da Fatura -->
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover ">
               <thead>
                 <tr>
                   <th>Cliente</th>
@@ -391,5 +391,10 @@ export default {
 
 .modal-dialog {
   margin-top: 10%;
+}
+
+.table-scroll {
+  max-height: 400px; /* altura máxima desejada */
+  overflow-y: auto;  /* barra de rolagem vertical */
 }
 </style>
