@@ -34,7 +34,7 @@
             <td>{{ billing.description }}</td>
             <td>{{ currency(billing.amount) }}</td>
             <td>{{ billing.paymentMethod }}</td>
-            <td>{{ formatDate(billing.payedAt) }}</td>
+            <td>{{ formatDateWithHour(billing.payedAt) }}</td>
             <td class="text-center">
               <button class="btn btn-info btn-sm" @click="viewBilling(billing.id)">
                 <fa-icon :icon="['fas', 'eye']" /> Detalhes
@@ -70,8 +70,8 @@
             <p><strong>Valor:</strong> {{ currency(currentBilling.amount) }}</p>
             <p><strong>Valor Pago:</strong> {{ currency(currentBilling.amountPayed) }}</p>
             <p><strong>Método de Pagamento:</strong> {{ currentBilling.paymentMethod }}</p>
-            <p><strong>Pago em:</strong> {{ formatDate(currentBilling.payedAt) }}</p>
-            <p><strong>Criado em:</strong> {{ formatDate(currentBilling.createdAt) }}</p>
+            <p><strong>Pago em:</strong> {{ formatDateWithHour(currentBilling.payedAt) }}</p>
+            <p><strong>Criado em:</strong> {{ formatDateWithHour(currentBilling.createdAt) }}</p>
             <!-- Outros detalhes da fatura -->
           </div>
           <div class="modal-footer">
@@ -158,7 +158,7 @@
                   <th>Descrição</th>
                   <th>Valor</th>
                   <th>Método de Pagamento</th>
-                  <th>Criado em</th>
+                  <th>Data Compra</th>
                 </tr>
               </thead>
               <tbody>
@@ -167,7 +167,7 @@
                   <td>{{ item.description }}</td>
                   <td>{{ formatAmount(item.amount, item.type) }}</td>
                   <td>{{ item.paymentMethod }}</td>
-                  <td>{{ formatDate(item.purchasedAt || item.createdAt) }}</td>
+                  <td>{{ formatDateWithoutHour(item.purchasedAt || item.createdAt) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -186,7 +186,7 @@
 
 <script>
 import { apiService } from '../services/apiService';
-import { formatDateHour } from '../utils/formatDate';
+import { formatDateHour, formatDate } from '../utils/formatDate';
 import CurrencyInput from './CurrencyInput'
 import Pagination from '@/components/Pagination.vue';
 import ClientCombo from '@/components/ClientCombo.vue';
@@ -352,9 +352,13 @@ export default {
     closePayModal() {
       this.showPayModal = false;
     },
-    formatDate(dateString) {
-      if (!dateString) return 'Não Pago';
+    formatDateWithHour(dateString) {
+      if (!dateString) return 'Não informado';
       return formatDateHour(dateString)
+    },
+    formatDateWithoutHour(dateString) {
+      if (!dateString) return 'Não informado';
+      return formatDate(dateString)
     },
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
