@@ -134,7 +134,7 @@
     </div>
 
     <!-- Modal para Visualizar Itens da Fatura -->
-    <div  class="modal" tabindex="-1" role="dialog" v-if="showItemsModal">
+    <div class="modal" tabindex="-1" role="dialog" v-if="showItemsModal">
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -167,7 +167,9 @@
                   <td>{{ item.description }}</td>
                   <td>{{ formatAmount(item.amount, item.type) }}</td>
                   <td>{{ item.paymentMethod }}</td>
-                  <td>{{ formatDateWithoutHour(item.purchasedAt || item.createdAt) }}</td>
+                  <td>{{ formatDateWithoutHour(item.purchasedAt || item.createdAt) }} <input type="date"
+                      class="form-control form-control-sm" :value="formatInputDate(item.purchasedAt || item.createdAt)"
+                      @change="updatePurchaseDate(item, $event)" /></td>
                 </tr>
               </tbody>
             </table>
@@ -222,6 +224,27 @@ export default {
     this.fetchClients();
   },
   methods: {
+    formatInputDate(date) {
+      if (!date) return '';
+      return new Date(date).toISOString().split('T')[0]; // yyyy-mm-dd
+    },
+
+    async updatePurchaseDate(item, event) {
+      const newDate = event.target.value;
+      try {
+        const response = await apiService.patch(`/billings/items/${item.id}/update-purchase-date`, {
+          purchaseDate: newDate
+        });
+        if (!response.ok) {
+          throw new Error('Erro ao atualizar a data');
+        }
+        // Atualiza localmente
+        item.purchasedAt = newDate;
+      } catch (error) {
+        console.error('Erro ao atualizar data:', error);
+        this.errorMessages = ['Erro ao atualizar a data de compra'];
+      }
+    },
     async fetchClients() {
       try {
         const response = await apiService.get('/clients?perPage=500');
@@ -398,7 +421,9 @@ export default {
 }
 
 .table-scroll {
-  max-height: 400px; /* altura máxima desejada */
-  overflow-y: auto;  /* barra de rolagem vertical */
+  max-height: 400px;
+  /* altura máxima desejada */
+  overflow-y: auto;
+  /* barra de rolagem vertical */
 }
 </style>
