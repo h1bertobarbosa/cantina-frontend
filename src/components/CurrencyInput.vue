@@ -1,5 +1,8 @@
 <template>
-  <input ref="inputRef" type="text" />
+  <v-text-field
+    ref="inputRef"
+  >
+  </v-text-field>
 </template>
 
 <script>

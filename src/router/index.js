@@ -17,7 +17,7 @@ const routes = [
     children: [
       {
         path: "/",
-        component: () => import("../components/Dashboard.vue"),
+        component: () => import("../components/DashBoard.vue"),
       },
       {
         path: "products",
@@ -25,11 +25,11 @@ const routes = [
       },
       {
         path: "clients",
-        component: () => import("../components/Clients.vue"),
+        component: () => import("../components/ClientsPage.vue"),
       },
       {
         path: "sales",
-        component: () => import("../components/Sales.vue"),
+        component: () => import("../components/SalesPage.vue"),
       },
       {
         path: "billings",
@@ -37,7 +37,7 @@ const routes = [
       },
       {
         path: "users",
-        component: () => import("../components/Users.vue"),
+        component: () => import("../components/UsersPage.vue"),
       },
     ],
   },

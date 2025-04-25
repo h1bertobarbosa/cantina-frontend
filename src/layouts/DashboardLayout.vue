@@ -1,149 +1,163 @@
-<!-- src/layouts/DashboardLayout.vue -->
 <template>
-  <div>
+  <v-app>
+    <!-- Navigation Drawer (Sidebar) -->
+    <v-navigation-drawer
+      v-model="drawer"
+      app
+      color="grey-lighten-4"
+      :permanent="$vuetify.display.mdAndUp"
+      :temporary="$vuetify.display.smAndDown"
+    >
+      <v-list density="compact" nav>
+        <!-- Itens de Navegação -->
+        <v-list-item
+          prepend-icon="mdi-view-dashboard"
+          title="Home"
+          value="home"
+          to="/"
+          exact
+        ></v-list-item>
+        <v-divider></v-divider>
+        <v-list-subheader>Gerenciar</v-list-subheader>
+        <v-list-item
+          prepend-icon="mdi-package-variant-closed"
+          title="Produtos"
+          value="products"
+          to="/dashboard/products"
+        ></v-list-item>
+        <v-list-item
+          prepend-icon="mdi-account-group"
+          title="Clientes"
+          value="clients"
+          to="/dashboard/clients"
+        ></v-list-item>
+        <v-list-item
+          prepend-icon="mdi-cart"
+          title="Vendas"
+          value="sales"
+          to="/dashboard/sales"
+        ></v-list-item>
+        <v-list-item
+          prepend-icon="mdi-file-document"
+          title="Faturas"
+          value="billings"
+          to="/dashboard/billings"
+        ></v-list-item>
+        <v-list-item
+          prepend-icon="mdi-account-cog"
+          title="Usuários"
+          value="users"
+          to="/dashboard/users"
+        ></v-list-item>
+      </v-list>
+    </v-navigation-drawer>
 
-    <!-- Navbar -->
-    <nav class="navbar fixed-top navbar-expand-md navbar-dark bg-primary mb-3">
-      <div class="flex-row d-flex">
-        <button type="button" class="navbar-toggler mr-2" data-toggle="offcanvas" @click="toggleSidebar"
-          title="Toggle responsive left sidebar">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <a class="navbar-brand" href="#" title="Admin Template">Admin</a>
-      </div>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsingNavbar">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="navbar-collapse collapse" id="collapsingNavbar">
-        <ul class="navbar-nav">
-          <li class="nav-item active">
-            <router-link class="nav-link" to="/">Home</router-link>
-          </li>
-        </ul>
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item">
-            <span class="nav-link">Olá, {{ userName }}</span>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" @click.prevent="logout">Sair</a>
-          </li>
-        </ul>
-      </div>
-    </nav>
-    <!-- Sidebar e Conteúdo Principal -->
-    <div class="container-fluid" id="main">
-      <div class="row row-offcanvas row-offcanvas-left">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 sidebar-offcanvas bg-light pl-0" id="sidebar" role="navigation">
-          <ul class="nav flex-column sticky-top pl-0 pt-5 mt-3">
-            <li class="nav-item">
-              <router-link class="nav-link" to="/dashboard/products">Produtos</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/dashboard/clients">Clientes</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/dashboard/sales">Vendas</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/dashboard/billings">Faturas</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/dashboard/users">Usuários</router-link>
-            </li>
-          </ul>
-        </div>
-        <!-- Conteúdo Principal -->
-        <div class="col main pt-5 mt-3">
-          <router-view></router-view>
-        </div>
-      </div>
-    </div>
+    <!-- App Bar (Navbar) -->
+    <v-app-bar app color="primary" dark density="compact">
+      <!-- Ícone para Toggler o Drawer em Telas Menores -->
+      <v-app-bar-nav-icon
+        @click="drawer = !drawer"
+        class="d-md-none"
+      ></v-app-bar-nav-icon>
+
+      <v-app-bar-title>Admin</v-app-bar-title>
+
+      <v-spacer></v-spacer>
+
+      <!-- Informações do Usuário e Logout -->
+      <span class="mr-3 d-none d-sm-inline">Olá, {{ userName }}</span>
+      <v-btn icon @click="logout">
+        <v-tooltip activator="parent" location="bottom">Sair</v-tooltip>
+        <v-icon>mdi-logout</v-icon>
+      </v-btn>
+    </v-app-bar>
+
+    <!-- Conteúdo Principal -->
+    <v-main>
+      <v-container fluid>
+        <router-view></router-view>
+      </v-container>
+    </v-main>
+
     <!-- Footer -->
-    <footer class="container-fluid">
-      <p class="text-right small">©2024 Consolidated Technology</p>
-    </footer>
-  </div>
+    <v-footer app class="pa-2" style="height: auto;">
+      <v-spacer></v-spacer>
+      <span class="text-caption">©{{ new Date().getFullYear() }} Consolidated Technology</span>
+    </v-footer>
+  </v-app>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { jwtDecode } from "jwt-decode";
-export default {
+import { useDisplay } from 'vuetify'; // Importar useDisplay
 
-  name: 'DashboardLayout',
-  data() {
-    return {
-      userName: ''
-    };
-  },
-  created() {
-    this.getUserName();
-  },
-  methods: {
-    getUserName() {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
+// Acesso ao router
+const router = useRouter();
 
-        this.$router.push('/signin');
-        return;
-      }
-      try {
-        // Decodifica o token JWT para extrair o payload
-        const decodedToken = jwtDecode(accessToken);
+// Controle do estado do navigation drawer (sidebar)
+const drawer = ref(true); // Começa aberto por padrão em desktop
 
-        // Verifica se o campo 'name' existe no token
-        if (decodedToken && decodedToken.name) {
-          this.userName = decodedToken.name;
-        } else {
-          // Se não houver o campo 'name', define um nome padrão
-          this.userName = 'Usuário';
-        }
-      } catch (error) {
-        console.error('Erro ao decodificar o token JWT:', error);
-        // Em caso de erro, redireciona para a página de login
-        this.$router.push('/signin');
-      }
-    },
-    logout() {
-      // Remove os dados do usuário e o token
-      localStorage.removeItem('accessToken');
-      this.$router.push('/signin');
-    },
-    toggleSidebar() {
-      // Alterna a classe que controla a visibilidade do sidebar
-      document.getElementById('sidebar').classList.toggle('active');
+// Nome do usuário
+const userName = ref('Usuário');
+
+// Acesso às propriedades de display do Vuetify
+const { mdAndUp } = useDisplay();
+
+// Função para obter o nome do usuário do token JWT
+const getUserName = () => {
+  const accessToken = localStorage.getItem('accessToken');
+  if (!accessToken) {
+    router.push('/signin');
+    return;
+  }
+  try {
+    const decodedToken = jwtDecode(accessToken);
+    // Verifica se o token decodificado e o campo 'name' existem
+    if (decodedToken && decodedToken.name) {
+      userName.value = decodedToken.name;
+    } else {
+      console.warn("Token JWT decodificado não contém o campo 'name'. Usando nome padrão.");
+      userName.value = 'Usuário'; // Mantém o padrão se 'name' não existir
     }
+  } catch (error) {
+    console.error('Erro ao decodificar o token JWT:', error);
+    localStorage.removeItem('accessToken'); // Limpa token inválido
+    router.push('/signin');
   }
 };
+
+// Função de logout
+const logout = () => {
+  localStorage.removeItem('accessToken');
+  router.push('/signin');
+};
+
+// Executa ao montar o componente
+onMounted(() => {
+  getUserName();
+  // Ajusta o estado inicial do drawer com base no tamanho da tela
+  // Se for menor que 'md', começa fechado.
+  if (!mdAndUp.value) {
+    drawer.value = false;
+  }
+});
+
 </script>
 
 <style scoped>
-/* Estilos personalizados, se necessário */
-/* Exemplo de estilo para esconder o sidebar */
-#sidebar.active {
-  display: none;
+/* Estilos específicos do componente, se necessário. Vuetify cuida da maioria. */
+.v-list-item--active {
+    /* background-color: rgba(var(--v-theme-primary), 0.1); /* Exemplo de destaque */
+    color: rgb(var(--v-theme-primary));
+}
+.v-list-item__prepend > .v-icon {
+    margin-inline-end: 16px; /* Ajuste do espaçamento do ícone padrão do Vuetify 3 */
 }
 
-/* Exemplo de estilos para o sidebar */
-@media screen and (max-width: 768px) {
-  .row-offcanvas {
-    position: relative;
-    transition: all 0.25s ease-out;
-  }
-
-  .row-offcanvas-left .sidebar-offcanvas {
-    left: -33%;
-  }
-
-  .row-offcanvas-left.active {
-    left: 33%;
-    margin-left: -33%;
-  }
-
-  .sidebar-offcanvas {
-    position: absolute;
-    top: 0;
-    width: 33%;
-  }
+/* Ajuste fino para espaçamento no footer */
+.v-footer {
+  font-size: 0.8rem;
 }
 </style>

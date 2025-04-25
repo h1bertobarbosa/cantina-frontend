@@ -11,14 +11,18 @@
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/vue-fontawesome": "^3.0.8",
+    "@mdi/font": "^7.4.47",
+    "@mdi/js": "^7.4.47",
     "bootstrap": "^4.6.2",
     "core-js": "^3.8.3",
     "date-fns": "^4.1.0",
     "jwt-decode": "^4.0.0",
+    "maska": "^3.1.1",
     "vue": "^3.2.13",
     "vue-currency-input": "^3.1.0",
     "vue-router": "^4.4.3",
     "vue-the-mask": "^0.11.1",
+    "vuetify": "^3.8.2",
     "vuex": "^4.0.2"
   },
   "devDependencies": {
