@@ -67,7 +67,7 @@ const selectedClient = ref(props.initialClientId);
 const handleSelection = (value) => {
   // O v-autocomplete com return-object="false" já nos dá o ID (item-value)
   // Emitimos o evento 'selected' com o ID (ou null se limpo)
-  emit('selected', value);
+  emit('selected', value?.id);
 };
 
 // Observador opcional: Se a prop initialClientId mudar externamente,
@@ -81,9 +81,3 @@ watch(() => props.initialClientId, (newId) => {
   pelo componente v-autocomplete do Vuetify. Não precisamos mais dela aqui.
 */
 </script>
-
-<style scoped>
-/* Geralmente não são necessários estilos customizados aqui,
-   pois o v-autocomplete já é estilizado pelo Vuetify.
-   Remova o estilo .combo-dropdown anterior. */
-</style>
