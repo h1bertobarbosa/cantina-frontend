@@ -12,14 +12,7 @@
     <!-- Mensagens de Erro Gerais -->
     <v-row v-if="errorMessages.length">
       <v-col cols="12">
-        <v-alert
-          type="error"
-          variant="tonal"
-          border="start"
-          prominent
-          closable
-          @update:modelValue="clearErrorMessages"
-        >
+        <v-alert type="error" variant="tonal" border="start" prominent closable @update:modelValue="clearErrorMessages">
           <ul>
             <li v-for="(error, index) in errorMessages" :key="`err-${index}`">{{ error }}</li>
           </ul>
@@ -60,27 +53,15 @@
               <td class="text-center">
                 <v-tooltip text="Detalhes">
                   <template v-slot:activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon="mdi-eye"
-                      color="info"
-                      variant="text"
-                      size="small"
-                      @click="openViewSaleDialog(sale)"
-                    ></v-btn>
+                    <v-btn v-bind="props" icon="mdi-eye" color="info" variant="text" size="small"
+                      @click="openViewSaleDialog(sale)"></v-btn>
                   </template>
                 </v-tooltip>
 
                 <v-tooltip text="Excluir">
                   <template v-slot:activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon="mdi-delete"
-                      color="error"
-                      variant="text"
-                      size="small"
-                      @click="openDeleteConfirmDialog(sale.id)"
-                    ></v-btn>
+                    <v-btn v-bind="props" icon="mdi-delete" color="error" variant="text" size="small"
+                      @click="openDeleteConfirmDialog(sale.id)"></v-btn>
                   </template>
                 </v-tooltip>
               </td>
@@ -89,103 +70,103 @@
         </v-table>
 
         <!-- Paginação -->
-        <v-pagination
-          v-if="totalPages > 1"
-          v-model="pagination.page"
-          :length="totalPages"
-          :total-visible="5"  
-          @update:modelValue="handlePageChange"
-          density="compact"
-          class="mt-4"
-        ></v-pagination>
+        <v-pagination v-if="totalPages > 1" v-model="pagination.page" :length="totalPages" :total-visible="5"
+          @update:modelValue="handlePageChange" density="compact" class="mt-4"></v-pagination>
       </v-col>
     </v-row>
 
-    <!-- Dialog para Adicionar/Editar Venda -->
-    <v-dialog v-model="showSaleDialog" max-width="600px" persistent>
+    <!-- Dialog para Adicionar Venda -->
+    <v-dialog v-model="showSaleDialog" max-width="700px" persistent>
       <v-card>
         <v-form ref="saleForm" @submit.prevent="saveSale">
           <v-card-title class="headline grey lighten-2">
             Adicionar Venda
-             <v-spacer></v-spacer>
-             <v-btn icon="mdi-close" variant="text" @click="closeSaleDialog"></v-btn>
+            <v-spacer></v-spacer>
+            <v-btn icon="mdi-close" variant="text" @click="closeSaleDialog"></v-btn>
           </v-card-title>
-          <v-card-text>
+          <v-card-text class="pt-4">
             <!-- Mensagens de Erro no Modal -->
-             <v-alert
-                v-if="modalErrorMessages.length"
-                type="error"
-                variant="tonal"
-                border="start"
-                density="compact"
-                class="mb-3"
-              >
-               <ul>
-                 <li v-for="(error, index) in modalErrorMessages" :key="`modal-err-${index}`">{{ error }}</li>
-               </ul>
-             </v-alert>
+            <v-alert v-if="modalErrorMessages.length" type="error" variant="tonal" border="start" density="compact"
+              class="mb-3">
+              <ul>
+                <li v-for="(error, index) in modalErrorMessages" :key="`modal-err-${index}`">{{ error }}</li>
+              </ul>
+            </v-alert>
 
-            <v-select
-              label="Produto"
-              v-model="currentSale.productId"
-              :items="products"
-              item-title="display"
-              item-value="id"
-              :rules="[v => !!v || 'Produto é obrigatório']"
-              required
-              variant="outlined"
-              density="compact"
-              class="mb-3"
-              no-data-text="Nenhum produto encontrado"
-            >
-                <!-- Custom display for product options -->
-                <template v-slot:item="{ props, item }">
-                    <v-list-item v-bind="props" :title="item.raw.name" :subtitle="currency(item.raw.price)"></v-list-item>
-                </template>
-            </v-select>
+            <v-row dense>
+              <v-col cols="12" md="6">
+                <v-select label="Cliente" v-model="currentSale.clientId" :items="clients" item-title="name"
+                  item-value="id" :rules="[v => !!v || 'Cliente é obrigatório']" required variant="outlined"
+                  density="compact" no-data-text="Nenhum cliente encontrado" clearable></v-select>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-select label="Método de Pagamento" v-model="currentSale.paymentMethod" :items="paymentMethods"
+                  item-title="text" item-value="value" :rules="[v => !!v || 'Método de pagamento é obrigatório']"
+                  required variant="outlined" density="compact"></v-select>
+              </v-col>
+            </v-row>
+            <v-row dense>
+              <v-col cols="12" md="6">
+                <v-text-field label="Data da Compra" v-model="currentSale.buyDate" type="date"
+                  :rules="[v => !!v || 'Data da compra é obrigatória']" required variant="outlined"
+                  density="compact"></v-text-field>
+         
+              </v-col>
+            </v-row>
 
-            <v-select
-              label="Cliente"
-              v-model="currentSale.clientId"
-              :items="clients"
-              item-title="name"
-              item-value="id"
-              :rules="[v => !!v || 'Cliente é obrigatório']"
-              required
-              variant="outlined"
-              density="compact"
-              class="mb-3"
-              no-data-text="Nenhum cliente encontrado"
-              clearable
-            ></v-select>
+            <v-divider class="my-4"></v-divider>
+            <h4>Itens da Venda</h4>
 
-            <v-text-field
-              label="Quantidade"
-              v-model.number="currentSale.quantity"
-              type="number"
-              :rules="[
-                  v => !!v || 'Quantidade é obrigatória',
-                  v => v > 0 || 'Quantidade deve ser maior que zero'
-              ]"
-              required
-              variant="outlined"
-              density="compact"
-              class="mb-3"
-              min="1"
-            ></v-text-field>
+            <!-- Formulário para adicionar item -->
+            <v-row dense align="end" class="mt-2">
+              <v-col cols="12" md="5">
+                <v-select label="Produto" v-model="newItem.productId" :items="products" item-title="display"
+                  item-value="id" variant="outlined" density="compact" no-data-text="Nenhum produto encontrado"
+                  clearable hide-details="auto">
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props" :title="item.raw.name"
+                      :subtitle="currency(item.raw.price)"></v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+              <v-col cols="12" md="3">
+                <v-text-field label="Quantidade" v-model.number="newItem.quantity" type="number" variant="outlined"
+                  density="compact" min="1" hide-details="auto"></v-text-field>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-btn color="secondary" @click="addItemToSale" block
+                  :disabled="!newItem.productId || newItem.quantity <= 0">
+                  Adicionar Item
+                </v-btn>
+              </v-col>
+            </v-row>
 
-            <v-select
-              label="Método de Pagamento"
-              v-model="currentSale.paymentMethod"
-              :items="paymentMethods"
-              item-title="text"
-              item-value="value"
-              :rules="[v => !!v || 'Método de pagamento é obrigatório']"
-              required
-              variant="outlined"
-              density="compact"
-              class="mb-3"
-            ></v-select>
+            <!-- Lista de itens adicionados -->
+            <v-list v-if="currentSale.items.length" lines="two" density="compact" class="mt-3 elevation-1">
+              <v-list-subheader>Itens Adicionados</v-list-subheader>
+              <template v-for="(item, index) in currentSale.items" :key="`sale-item-${index}`">
+                <v-list-item>
+                  <v-list-item-title>{{ item.productName }}</v-list-item-title>
+                  <v-list-item-subtitle>
+                    Qtd: {{ item.quantity }} x {{ currency(item.price) }} = {{ currency(item.quantity * item.price) }}
+                  </v-list-item-subtitle>
+                  <template v-slot:append>
+                    <v-btn icon="mdi-delete" variant="text" color="error" size="small"
+                      @click="removeItemFromSale(index)"></v-btn>
+                  </template>
+                </v-list-item>
+                <v-divider v-if="index < currentSale.items.length - 1"></v-divider>
+              </template>
+            </v-list>
+            <v-alert v-else type="info" variant="tonal" density="compact" class="mt-3">
+              Nenhum item adicionado à venda.
+            </v-alert>
+
+            <v-row dense class="mt-4">
+              <v-col class="text-h6 text-right">
+                Total da Venda: {{ currency(saleTotalAmount) }}
+              </v-col>
+            </v-row>
 
           </v-card-text>
           <v-card-actions>
@@ -193,8 +174,8 @@
             <v-btn color="grey darken-1" text @click="closeSaleDialog">
               Cancelar
             </v-btn>
-            <v-btn color="primary" type="submit" :loading="saving">
-              Salvar
+            <v-btn color="primary" type="submit" :loading="saving" :disabled="!currentSale.items.length">
+              Salvar Venda
             </v-btn>
           </v-card-actions>
         </v-form>
@@ -207,7 +188,7 @@
         <v-card-title class="headline grey lighten-2">
           Detalhes da Venda
           <v-spacer></v-spacer>
-           <v-btn icon="mdi-close" variant="text" @click="closeDetailsDialog"></v-btn>
+          <v-btn icon="mdi-close" variant="text" @click="closeDetailsDialog"></v-btn>
         </v-card-title>
         <v-card-text>
           <p><strong>ID:</strong> {{ saleToView.id }}</p>
@@ -217,7 +198,7 @@
           <p><strong>Valor:</strong> {{ currency(saleToView.amount) }}</p>
           <p><strong>Venda em:</strong> {{ formatDate(saleToView.createdAt) }}</p>
           <p v-if="saleToView.payedAt"> <!-- Display only if payedAt exists -->
-             <strong>Pago em:</strong> {{ formatDate(saleToView.payedAt) }}
+            <strong>Pago em:</strong> {{ formatDate(saleToView.payedAt) }}
           </p>
           <!-- Add other details as needed -->
         </v-card-text>
@@ -230,24 +211,24 @@
       </v-card>
     </v-dialog>
 
-     <!-- Dialog de Confirmação de Exclusão -->
-     <v-dialog v-model="showDeleteConfirmDialog" max-width="400px">
-       <v-card>
-         <v-card-title class="headline">Confirmar Exclusão</v-card-title>
-         <v-card-text>
-           Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
-         </v-card-text>
-         <v-card-actions>
-           <v-spacer></v-spacer>
-           <v-btn color="grey darken-1" text @click="closeDeleteConfirmDialog">
-             Cancelar
-           </v-btn>
-           <v-btn color="error" @click="executeDelete" :loading="deleting">
-             Excluir
-           </v-btn>
-         </v-card-actions>
-       </v-card>
-     </v-dialog>
+    <!-- Dialog de Confirmação de Exclusão -->
+    <v-dialog v-model="showDeleteConfirmDialog" max-width="400px">
+      <v-card>
+        <v-card-title class="headline">Confirmar Exclusão</v-card-title>
+        <v-card-text>
+          Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey darken-1" text @click="closeDeleteConfirmDialog">
+            Cancelar
+          </v-btn>
+          <v-btn color="error" @click="executeDelete" :loading="deleting">
+            Excluir
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Loading Overlay -->
     <v-overlay :model-value="loading" class="align-center justify-center">
@@ -259,7 +240,7 @@
 
 <script>
 import { apiService } from '../services/apiService';
-import {  formatDate } from '../utils/formatDate'; // Assuming formatDateHour exists or use formatDate
+import { formatDate } from '../utils/formatDate'; // Assuming formatDateHour exists or use formatDate
 
 // --- Keep using Options API as per the original example's style ---
 export default {
@@ -277,6 +258,7 @@ export default {
       showDeleteConfirmDialog: false,
       saleToDeleteId: null,
       currentSale: this.getInitialSaleData(), // Data for the add/edit form
+      newItem: this.getInitialNewItemData(),
       saleToView: {}, // Data for the details view
       errorMessages: [],
       modalErrorMessages: [], // Errors specific to the modal
@@ -292,32 +274,52 @@ export default {
         { text: 'à Receber', value: 'TO_RECEIVE' },
         // Add other methods if needed
       ],
-       saleForm: null // To hold the ref to v-form
+      saleForm: null // To hold the ref to v-form
     };
   },
   computed: {
     totalPages() {
-       if (!this.pagination.total || this.pagination.total <= 0) return 0;
-       return Math.ceil(this.pagination.total / this.pagination.perPage);
+      if (!this.pagination.total || this.pagination.total <= 0) return 0;
+      return Math.ceil(this.pagination.total / this.pagination.perPage);
     },
+    saleTotalAmount() {
+      if (!this.currentSale || !this.currentSale.items) return 0;
+      return this.currentSale.items.reduce((sum, item) => {
+        return sum + (parseFloat(item.price) * parseInt(item.quantity, 10));
+      }, 0);
+    }
   },
   created() {
     this.fetchSales();
     this.fetchProducts();
     this.fetchClients();
   },
-   mounted() {
-     // Assign ref after component is mounted
-     this.saleForm = this.$refs.saleForm;
-   },
+  mounted() {
+    // Assign ref after component is mounted
+    this.saleForm = this.$refs.saleForm;
+  },
   methods: {
     getInitialSaleData() {
-        return {
-            productId: null, // Use null for v-select initial state
-            clientId: null,
-            quantity: 1,
-            paymentMethod: null,
-        };
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = (today.getMonth() + 1).toString().padStart(2, '0');
+      const day = today.getDate().toString().padStart(2, '0');
+
+      return {
+        items: [],
+        clientId: null,
+        paymentMethod: null,
+        buyDate: `${year}-${month}-${day}`, // Default to today
+      };
+    },
+    getInitialNewItemData() {
+      return {
+        productId: null,
+        quantity: 1,
+        price: 0, // Will be set when product is selected
+        productName: '', // For display in the items list
+      };
     },
     async fetchSales(page = this.pagination.page, perPage = this.pagination.perPage) {
       this.loading = true;
@@ -343,7 +345,7 @@ export default {
         console.error('Fetch Sales Error:', error);
         // Ensure errorMessages has something if not set by API response
         if (!this.errorMessages.length) {
-            this.errorMessages = ['Ocorreu um erro inesperado ao buscar as vendas.'];
+          this.errorMessages = ['Ocorreu um erro inesperado ao buscar as vendas.'];
         }
       } finally {
         this.loading = false;
@@ -358,8 +360,8 @@ export default {
         const productsParsed = await response.json();
         // Prepare products for v-select display
         this.products = productsParsed.data.map(p => ({
-            ...p,
-            display: `${p.name} - ${this.currency(p.price)}` // Create display text
+          ...p,
+          display: `${p.name} - ${this.currency(p.price)}` // Create display text
         }));
       } catch (error) {
         console.error('Fetch Products Error:', error);
@@ -368,7 +370,7 @@ export default {
     },
 
     async fetchClients() {
-       // No loading indicator for this
+      // No loading indicator for this
       try {
         const response = await apiService.get('/clients?perPage=500'); // Fetch more if needed
         if (!response.ok) throw new Error('Erro ao buscar clientes');
@@ -382,48 +384,77 @@ export default {
 
     openAddSaleDialog() {
       this.currentSale = this.getInitialSaleData();
-      this.modalErrorMessages = []; // Clear modal errors
-       // Reset validation state if the form exists
-       this.$nextTick(() => {
-         if (this.saleForm) {
-           this.saleForm.resetValidation();
-         }
-       });
+      this.newItem = this.getInitialNewItemData();
+      this.modalErrorMessages = [];
+      this.$nextTick(() => {
+        if (this.saleForm) {
+          this.saleForm.resetValidation();
+        }
+      });
       this.showSaleDialog = true;
+    },
+    addItemToSale() {
+      this.modalErrorMessages = [];
+      if (!this.newItem.productId) {
+        this.modalErrorMessages.push('Selecione um produto.');
+        return;
+      }
+      if (!this.newItem.quantity || this.newItem.quantity <= 0) {
+        this.modalErrorMessages.push('A quantidade deve ser maior que zero.');
+        return;
+      }
+
+      const product = this.products.find(p => p.id === this.newItem.productId);
+      if (!product) {
+        this.modalErrorMessages.push('Produto não encontrado.');
+        return;
+      }
+
+      // Check if item already exists, if so, offer to update quantity or just add new
+      // For simplicity, we'll allow duplicate product entries as separate items.
+      // If you want to merge, you'd find existing item and update quantity.
+
+      this.currentSale.items.push({
+        productId: product.id,
+        price: product.price, // Price at the moment of adding to cart
+        quantity: parseInt(this.newItem.quantity, 10),
+        productName: product.name // For display purposes in the list
+      });
+
+      this.newItem = this.getInitialNewItemData(); // Reset for next item
+    },
+
+    removeItemFromSale(index) {
+      this.currentSale.items.splice(index, 1);
     },
 
     async saveSale() {
-       this.modalErrorMessages = []; // Clear previous modal errors
+      this.modalErrorMessages = [];
 
-        // Trigger Vuetify form validation
-        const { valid } = await this.$refs.saleForm.validate();
-        if (!valid) {
-            this.modalErrorMessages = ['Por favor, corrija os erros no formulário.'];
-            return;
-        }
+      const { valid } = await this.$refs.saleForm.validate();
+      if (!valid) {
+        this.modalErrorMessages.push('Por favor, corrija os erros no formulário.');
+        return;
+      }
+
+      if (!this.currentSale.items.length) {
+        this.modalErrorMessages.push('Adicione pelo menos um item à venda.');
+        return;
+      }
 
       this.saving = true;
       try {
-        const selectedProduct = this.products.find(
-          product => product.id === this.currentSale.productId
-        );
-
-        // Should not happen if validation passes, but good safety check
-        if (!selectedProduct) {
-            this.modalErrorMessages = ['Produto selecionado inválido.'];
-            this.saving = false;
-            return;
-        }
-
         const payload = {
-          productId: this.currentSale.productId,
+          items: this.currentSale.items.map(item => ({
+            productId: item.productId,
+            price: parseFloat(item.price),
+            quantity: parseInt(item.quantity, 10)
+          })),
           clientId: this.currentSale.clientId,
-          price: parseFloat(selectedProduct.price), // Ensure price is a number
-          quantity: parseInt(this.currentSale.quantity, 10), // Ensure quantity is an integer
           paymentMethod: this.currentSale.paymentMethod,
+          buyDate: this.currentSale.buyDate, // YYYY-MM-DD format
         };
 
-        // Assuming API handles creation (POST)
         const response = await apiService.post('/sales', payload);
         const responseData = await response.json();
 
@@ -433,18 +464,18 @@ export default {
         }
 
         this.closeSaleDialog();
-        await this.fetchSales(this.pagination.page); // Refresh current page
-        // Optional: Show success message (e.g., using v-snackbar)
+        await this.fetchSales(this.pagination.page);
 
       } catch (error) {
         console.error('Save Sale Error:', error);
-         if (!this.modalErrorMessages.length) {
-            this.modalErrorMessages = ['Ocorreu um erro inesperado ao salvar a venda.'];
+        if (!this.modalErrorMessages.length) {
+          this.modalErrorMessages = ['Ocorreu um erro inesperado ao salvar a venda.'];
         }
       } finally {
         this.saving = false;
       }
     },
+
 
     openViewSaleDialog(sale) {
       this.saleToView = { ...sale }; // Use a separate object for viewing
@@ -452,8 +483,8 @@ export default {
     },
 
     openDeleteConfirmDialog(id) {
-        this.saleToDeleteId = id;
-        this.showDeleteConfirmDialog = true;
+      this.saleToDeleteId = id;
+      this.showDeleteConfirmDialog = true;
     },
 
     async executeDelete() {
@@ -466,7 +497,7 @@ export default {
         // Check if response has content before trying to parse json
         let errorData = null;
         if (response.headers.get("content-type")?.includes("application/json")) {
-            errorData = await response.json();
+          errorData = await response.json();
         }
 
         if (!response.ok) {
@@ -477,16 +508,16 @@ export default {
         this.closeDeleteConfirmDialog();
         // Refresh list, potentially going back a page if it was the last item
         if (this.sales.length === 1 && this.pagination.page > 1) {
-            await this.fetchSales(this.pagination.page - 1);
+          await this.fetchSales(this.pagination.page - 1);
         } else {
-            await this.fetchSales(this.pagination.page);
+          await this.fetchSales(this.pagination.page);
         }
         // Optional: Show success message
 
       } catch (error) {
         console.error('Delete Sale Error:', error);
-         if (!this.errorMessages.length) {
-            this.errorMessages = ['Ocorreu um erro inesperado ao excluir a venda.'];
+        if (!this.errorMessages.length) {
+          this.errorMessages = ['Ocorreu um erro inesperado ao excluir a venda.'];
         }
       } finally {
         this.deleting = false;
@@ -495,22 +526,22 @@ export default {
 
     closeSaleDialog() {
       this.showSaleDialog = false;
-       // Optional: Reset form validation state on close
-       this.$nextTick(() => {
-         if (this.$refs.saleForm) {
-             this.$refs.saleForm.reset(); // Resets inputs and validation
-         }
-         this.currentSale = this.getInitialSaleData(); // Ensure data model is reset
-         this.modalErrorMessages = []; // Clear modal errors on close
-       });
+      // Optional: Reset form validation state on close
+      this.$nextTick(() => {
+        if (this.$refs.saleForm) {
+          this.$refs.saleForm.reset(); // Resets inputs and validation
+        }
+        this.currentSale = this.getInitialSaleData(); // Ensure data model is reset
+        this.modalErrorMessages = []; // Clear modal errors on close
+      });
     },
     closeDetailsDialog() {
       this.showDetailsDialog = false;
       this.saleToView = {}; // Clear viewed data
     },
     closeDeleteConfirmDialog() {
-        this.showDeleteConfirmDialog = false;
-        this.saleToDeleteId = null;
+      this.showDeleteConfirmDialog = false;
+      this.saleToDeleteId = null;
     },
 
     // Format date using the utility function
@@ -523,16 +554,16 @@ export default {
 
     // Format currency
     currency(value) {
-        if (value === null || value === undefined || isNaN(Number(value))) {
-            return 'R$ 0,00';
-        }
-        return 'R$ ' + Number(value).toFixed(2).replace('.', ',');
+      if (value === null || value === undefined || isNaN(Number(value))) {
+        return 'R$ 0,00';
+      }
+      return 'R$ ' + Number(value).toFixed(2).replace('.', ',');
     },
 
-     // Get display text for payment method code
+    // Get display text for payment method code
     getPaymentMethodText(methodValue) {
-        const method = this.paymentMethods.find(m => m.value === methodValue);
-        return method ? method.text : methodValue; // Fallback to value if not found
+      const method = this.paymentMethods.find(m => m.value === methodValue);
+      return method ? method.text : methodValue; // Fallback to value if not found
     },
 
     // Handle pagination change
@@ -543,21 +574,21 @@ export default {
 
     // Clear general error messages
     clearErrorMessages() {
-        this.errorMessages = [];
+      this.errorMessages = [];
     },
 
-     // Helper to parse API errors (assuming potential structure)
-     parseApiErrors(errorData) {
-        if (!errorData) return ['Ocorreu um erro.'];
-        if (errorData.message) {
-            return Array.isArray(errorData.message) ? errorData.message : [errorData.message];
-        }
-        if (typeof errorData === 'string') {
-            return [errorData];
-        }
-        // Add more specific parsing if your API returns errors differently
-        return ['Ocorreu um erro desconhecido.'];
-     }
+    // Helper to parse API errors (assuming potential structure)
+    parseApiErrors(errorData) {
+      if (!errorData) return ['Ocorreu um erro.'];
+      if (errorData.message) {
+        return Array.isArray(errorData.message) ? errorData.message : [errorData.message];
+      }
+      if (typeof errorData === 'string') {
+        return [errorData];
+      }
+      // Add more specific parsing if your API returns errors differently
+      return ['Ocorreu um erro desconhecido.'];
+    }
   },
 };
 </script>
@@ -568,11 +599,13 @@ export default {
 
 /* Add any custom styles needed */
 .v-table tbody tr:hover {
-  background-color: rgba(0, 0, 0, 0.03); /* Subtle hover for table rows */
+  background-color: rgba(0, 0, 0, 0.03);
+  /* Subtle hover for table rows */
 }
 
 /* Ensure list item in select looks good */
 .v-list-item--density-compact.v-list-item--one-line {
-    min-height: 40px; /* Adjust if needed */
+  min-height: 40px;
+  /* Adjust if needed */
 }
 </style>

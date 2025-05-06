@@ -192,9 +192,9 @@
     <v-dialog v-model="showItemsDialog" max-width="900px">
       <v-card>
         <v-card-title class="headline grey lighten-2">
-          Itens da Fatura ({{ currentBilling.clientName }} - {{ currentBilling.description }})
+          Itens da Fatura
           <v-spacer></v-spacer>
-          <v-btn icon="mdi-close" variant="text" @click="showItemsDialog = false"></v-btn>
+          <b>{{ currentBilling.clientName }}</b> - {{ currentBilling.description }}
         </v-card-title>
         <v-card-text style="max-height: 500px; overflow-y: auto;">
           <!-- Mensagens de Erro no Modal -->
@@ -213,7 +213,6 @@
           <v-table v-if="!loadingItems && billingItems.length" hover density="compact">
             <thead>
               <tr>
-                <th class="text-left">Cliente</th>
                 <th class="text-left">Descrição</th>
                 <th class="text-left">Valor</th>
                 <th class="text-left">Método Pag.</th>
@@ -222,10 +221,9 @@
             </thead>
             <tbody>
               <tr v-for="item in billingItems" :key="item.id">
-                <td>{{ item.clientName }}</td>
                 <td>{{ item.description }}</td>
                 <td>{{ formatAmount(item.amount, item.type) }}</td>
-                <td>{{ item.paymentMethod }}</td>
+                <td>{{ formatPaymentMethod(item.paymentMethod) }}</td>
                 <td>
                   <v-menu :close-on-content-click="false" location="bottom">
                     <template v-slot:activator="{ props }">
@@ -341,7 +339,7 @@ export default {
 
     async updatePurchaseDate(item, newDateObj) {
       if (!newDateObj) return; // Não faz nada se a data for nula/inválida
-
+console.log(newDateObj)
       // Formata a data para YYYY-MM-DD para enviar à API
       const year = newDateObj.getFullYear();
       const month = (newDateObj.getMonth() + 1).toString().padStart(2, '0');
@@ -610,6 +608,17 @@ export default {
       // O v-model="currentPage" já atualiza o valor
       // A chamada @update:modelValue="handlePageChange" garante que buscamos os dados
       this.fetchBillings(newPage, this.pageSize);
+    },
+    formatPaymentMethod(method) {
+      // Formata o método de pagamento para exibição
+      const methodMap = {
+        PIX: 'PIX',
+        CASH: 'Dinheiro',
+        CREDIT_CARD: 'Cartão de Crédito',
+        DEBIT_CARD: 'Cartão de Débito',
+        TO_RECEIVE: 'A Receber',
+      };
+      return methodMap[method] || method; // Retorna o próprio método se não encontrado
     }
   }
 };
