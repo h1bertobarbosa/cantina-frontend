@@ -13,19 +13,20 @@
         <!-- Se ClientCombo for simples, poderia ser substituído por v-select -->
         <ClientCombo :clients="clients" label="Filtrar por Cliente" @selected="onClientSelected" variant="outlined"
           density="compact" clearable />
-        <!-- Alternativa se ClientCombo for apenas um select:
+      </v-col>
+       <!-- Novo Filtro de Método de Pagamento -->
+      <v-col cols="12" md="4">
         <v-select
-          label="Filtrar por Cliente"
-          :items="clients"
-          item-title="name" // Ajuste conforme a propriedade do nome do cliente
-          item-value="id" // Ajuste conforme a propriedade do ID do cliente
-          v-model="selectedClientId"
-          @update:modelValue="onClientChange"
+          label="Filtrar por Método de Pagamento"
+          :items="paymentMethodFilterOptions"
+          item-title="text"
+          item-value="value"
+          v-model="selectedPaymentMethod"
+          @update:modelValue="onPaymentMethodChange"
           variant="outlined"
           density="compact"
           clearable
         ></v-select>
-         -->
       </v-col>
     </v-row>
 
@@ -68,7 +69,7 @@
               <td>{{ billing.clientName }}</td>
               <td>{{ billing.description }}</td>
               <td>{{ currency(billing.amount) }}</td>
-              <td>{{ billing.paymentMethod }}</td>
+              <td>{{ formatPaymentMethod(billing.paymentMethod) }}</td>
               <td>{{ formatDateWithHour(billing.payedAt) }}</td>
               <td class="text-center">
                 <v-tooltip text="Detalhes">
@@ -116,7 +117,7 @@
           <p><strong>Descrição:</strong> {{ currentBilling.description }}</p>
           <p><strong>Valor:</strong> {{ currency(currentBilling.amount) }}</p>
           <p><strong>Valor Pago:</strong> {{ currency(currentBilling.amountPayed) }}</p>
-          <p><strong>Método de Pagamento:</strong> {{ currentBilling.paymentMethod }}</p>
+          <p><strong>Método de Pagamento:</strong> {{ formatPaymentMethod(currentBilling.paymentMethod) }}</p>
           <p><strong>Pago em:</strong> {{ formatDateWithHour(currentBilling.payedAt) }}</p>
           <p><strong>Criado em:</strong> {{ formatDateWithHour(currentBilling.createdAt) }}</p>
           <!-- Outros detalhes -->
@@ -161,20 +162,6 @@
             <CurrencyInput label="Valor a Pagar" v-model.lazy="amount" required
               :options="{ currency: 'BRL', precision: 2 }" variant="outlined" density="compact" class="mt-3"
               :rules="[v => !!v || 'Valor é obrigatório', v => parseFloat(v) > 0 || 'Valor deve ser maior que zero']" />
-            <!-- Alternativa com v-text-field (requer formatação manual/biblioteca externa para máscara de moeda) -->
-            <!--
-               <v-text-field
-                 label="Valor a Pagar"
-                 v-model="amount"
-                 required
-                 type="number"
-                 prefix="R$"
-                 :rules="[v => !!v || 'Valor é obrigatório']"
-                 variant="outlined"
-                 density="compact"
-                 class="mt-3"
-               ></v-text-field>
-                -->
 
           </v-card-text>
           <v-card-actions>
@@ -268,8 +255,23 @@ import { apiService } from '../services/apiService'; // Mantenha seu serviço de
 import { formatDateHour, formatDate } from '../utils/formatDate'; // Mantenha seus utils
 import CurrencyInput from './CurrencyInput'; // Mantenha seu componente
 import ClientCombo from '@/components/ClientCombo.vue'; // Mantenha seu componente
-// REMOVIDO: import Pagination from '@/components/Pagination.vue';
+const TransactionPaymentMethodEnum = Object.freeze({
+  PIX: 'PIX',
+  CREDIT_CARD: 'CREDIT_CARD',
+  DEBIT_CARD: 'DEBIT_CARD',
+  BOLETO: 'BOLETO',
+  CASH: 'CASH',
+  TO_RECEIVE: 'TO_RECEIVE',
+});
 
+const paymentMethodDisplayMap = Object.freeze({
+  [TransactionPaymentMethodEnum.PIX]: 'PIX',
+  [TransactionPaymentMethodEnum.CREDIT_CARD]: 'Cartão de Crédito',
+  [TransactionPaymentMethodEnum.DEBIT_CARD]: 'Cartão de Débito',
+  [TransactionPaymentMethodEnum.BOLETO]: 'Boleto',
+  [TransactionPaymentMethodEnum.CASH]: 'Dinheiro',
+  [TransactionPaymentMethodEnum.TO_RECEIVE]: 'A Receber',
+});
 export default {
   name: 'BillingsManager', // Renomeado para seguir convenção PascalCase
   components: { CurrencyInput, ClientCombo }, // Removido Pagination
@@ -298,12 +300,27 @@ export default {
       currentPage: 1,
       totalRows: 0, // Inicia com 0
       pageSize: 10,
+      selectedPaymentMethod: null, 
     };
   },
   computed: {
     totalPages() {
       if (!this.totalRows || this.totalRows <= 0) return 0;
       return Math.ceil(this.totalRows / this.pageSize);
+    },
+     paymentMethodFilterOptions() {
+      return Object.values(TransactionPaymentMethodEnum).map(value => ({
+        text: this.getPaymentMethodText(value),
+        value: value,
+      }));
+    },
+     paymentMethodDialogOptions() {
+      return Object.values(TransactionPaymentMethodEnum)
+        .filter(value => value !== TransactionPaymentMethodEnum.TO_RECEIVE) // 'A Receber' usually isn't a payment option
+        .map(value => ({
+          text: this.getPaymentMethodText(value),
+          value: value,
+        }));
     }
   },
   created() {
@@ -311,6 +328,9 @@ export default {
     this.fetchClients();
   },
   methods: {
+       getPaymentMethodText(methodValue) {
+      return paymentMethodDisplayMap[methodValue] || methodValue;
+    },
     formatInputDate(date) {
       if (!date) return null;
       // Retorna no formato YYYY-MM-DD que o <input type="date"> espera
@@ -339,7 +359,6 @@ export default {
 
     async updatePurchaseDate(item, newDateObj) {
       if (!newDateObj) return; // Não faz nada se a data for nula/inválida
-console.log(newDateObj)
       // Formata a data para YYYY-MM-DD para enviar à API
       const year = newDateObj.getFullYear();
       const month = (newDateObj.getMonth() + 1).toString().padStart(2, '0');
@@ -403,6 +422,9 @@ console.log(newDateObj)
         let url = `/billings?page=${page}&perPage=${perPage}`;
         if (this.selectedClientId) {
           url += `&clientId=${this.selectedClientId}`;
+        }
+           if (this.selectedPaymentMethod) { // Added filter
+          url += `&paymentMethod=${this.selectedPaymentMethod}`;
         }
         const response = await apiService.get(url);
         const data = await response.json(); // Lê a resposta mesmo se não for ok
@@ -602,23 +624,18 @@ console.log(newDateObj)
       this.currentPage = 1;
       this.fetchBillings(this.currentPage, this.pageSize);
     },
-
+    onPaymentMethodChange() { // Handler for the new filter
+      this.currentPage = 1;
+      this.fetchBillings(this.currentPage, this.pageSize);
+    },
     // Ação quando a página muda na paginação
     handlePageChange(newPage) {
       // O v-model="currentPage" já atualiza o valor
       // A chamada @update:modelValue="handlePageChange" garante que buscamos os dados
       this.fetchBillings(newPage, this.pageSize);
     },
-    formatPaymentMethod(method) {
-      // Formata o método de pagamento para exibição
-      const methodMap = {
-        PIX: 'PIX',
-        CASH: 'Dinheiro',
-        CREDIT_CARD: 'Cartão de Crédito',
-        DEBIT_CARD: 'Cartão de Débito',
-        TO_RECEIVE: 'A Receber',
-      };
-      return methodMap[method] || method; // Retorna o próprio método se não encontrado
+    formatPaymentMethod(methodKey) {
+      return this.getPaymentMethodText(methodKey);
     }
   }
 };
