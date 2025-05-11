@@ -92,6 +92,12 @@
                       @click="viewBillingItems(billing.id)"></v-btn>
                   </template>
                 </v-tooltip>
+                 <v-tooltip text="Excluir">
+                  <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" icon="mdi-delete" color="error" variant="text" size="small"
+                      @click="openDeleteDialog(billing)"></v-btn>
+                  </template>
+                </v-tooltip>
               </td>
             </tr>
           </tbody>
@@ -242,6 +248,56 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="showDeleteDialog" max-width="500px" persistent>
+      <v-card>
+        <!-- Add ref="deleteBillingForm" to the v-form -->
+        <v-form @submit.prevent="confirmDeleteBilling" ref="deleteBillingForm">
+          <v-card-title class="headline grey lighten-2">
+            Confirmar Exclusão
+            <v-spacer></v-spacer>
+            <v-btn icon="mdi-close" variant="text" @click="closeDeleteDialog" :disabled="deletingBilling"></v-btn>
+          </v-card-title>
+          <v-card-text>
+            <!-- Mensagens de Erro no Modal de Exclusão -->
+            <v-alert v-if="deleteErrorMessages.length" type="error" variant="tonal" border="start" density="compact" class="mb-3">
+              <ul>
+                <li v-for="(error, index) in deleteErrorMessages" :key="`del-err-${index}`">{{ error }}</li>
+              </ul>
+            </v-alert>
+
+            <p>Você tem certeza que deseja excluir a seguinte fatura?</p>
+            <div v-if="billingToDelete" class="mb-3">
+              <p><strong>ID:</strong> {{ billingToDelete.id }}</p>
+              <p><strong>Cliente:</strong> {{ billingToDelete.clientName }}</p>
+              <p><strong>Descrição:</strong> {{ billingToDelete.description }}</p>
+              <p><strong>Valor:</strong> {{ currency(billingToDelete.amount) }}</p>
+            </div>
+            <p class="font-weight-medium text-error">Esta ação não poderá ser desfeita.</p>
+
+            <v-textarea
+              v-model="deleteObservation"
+              label="Observação (obrigatório)" 
+              rows="3"
+              variant="outlined"
+              density="compact"
+              class="mt-4"
+              clearable
+              :rules="[rules.requiredField]"
+              required 
+            ></v-textarea>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="grey darken-1" text @click="closeDeleteDialog" :disabled="deletingBilling">
+              Cancelar
+            </v-btn>
+            <v-btn color="error" type="submit" :loading="deletingBilling">
+              Excluir Fatura
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
     <!-- Loading Overlay (Opcional, para feedback geral) -->
     <v-overlay :model-value="loading" class="align-center justify-center">
       <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
@@ -300,7 +356,14 @@ export default {
       currentPage: 1,
       totalRows: 0, // Inicia com 0
       pageSize: 10,
-      selectedPaymentMethod: null, 
+      selectedPaymentMethod: null,
+      showDeleteDialog: false,
+      rules: {
+        requiredField: value => !!(value && value.trim()) || 'Este campo é obrigatório.',
+      },
+      deleteErrorMessages: [],
+      deleteObservation: '',
+      deletingBilling: false,
     };
   },
   computed: {
@@ -636,7 +699,92 @@ export default {
     },
     formatPaymentMethod(methodKey) {
       return this.getPaymentMethodText(methodKey);
-    }
+    },
+    openDeleteDialog(billing) {
+      this.billingToDelete = { ...billing };
+      this.deleteObservation = '';
+      this.deleteErrorMessages = [];
+      // Reset validation if form exists (it should after first open)
+      if (this.$refs.deleteBillingForm) {
+        this.$refs.deleteBillingForm.resetValidation();
+      }
+      this.showDeleteDialog = true;
+    },
+
+    closeDeleteDialog() {
+      //if (this.deletingBilling) return;
+      this.showDeleteDialog = false;
+      this.billingToDelete = null;
+      this.deleteObservation = '';
+      this.deleteErrorMessages = [];
+      // Reset validation state of the form
+      if (this.$refs.deleteBillingForm) {
+        this.$refs.deleteBillingForm.resetValidation();
+      }
+    },
+
+   async confirmDeleteBilling() {
+      this.deleteErrorMessages = []; // Clear API error messages
+
+      // Validate the form using the ref
+      const { valid } = await this.$refs.deleteBillingForm.validate();
+      if (!valid) {
+        // Vuetify will show error messages next to the fields.
+        // You could add a general message to deleteErrorMessages if you want one in the v-alert too.
+        this.deleteErrorMessages.push('Por favor, preencha os campos obrigatórios.');
+        return;
+      }
+
+      if (!this.billingToDelete || !this.billingToDelete.id) {
+        this.deleteErrorMessages = ['Nenhuma fatura selecionada para exclusão.'];
+        return;
+      }
+
+      this.deletingBilling = true;
+
+      try {
+        const payload = {
+          obs: this.deleteObservation.trim(), // Send as 'obs' and trim whitespace
+        };
+
+        // The API expects 'obs' in the payload for the DELETE request
+        const response = await apiService.delete(`/billings/${this.billingToDelete.id}`, payload);
+
+        if (!response.ok) {
+          let errorData;
+          try {
+            errorData = await response.json(); // Try to parse error response
+            
+          } catch (e) {
+            // Fallback if response is not JSON or some other network error
+            errorData = { message: `Erro ${response.status} ao excluir a fatura. Detalhes: ${response.statusText}` };
+          }
+          // The API returns message as an array
+          this.deleteErrorMessages = Array.isArray(errorData?.message) ? errorData.message : [errorData?.message || `Erro desconhecido ao excluir.`];
+          throw new Error(this.deleteErrorMessages.join(', ') || 'Erro ao excluir fatura.');
+        }
+
+        // Success
+        this.closeDeleteDialog(); // This will also reset validation
+        // Consider showing a success snackbar here
+
+        await this.fetchBillings(this.currentPage, this.pageSize);
+
+        if (this.billings.length === 0 && this.currentPage > 1) {
+            this.currentPage--;
+            await this.fetchBillings(this.currentPage, this.pageSize);
+        }
+
+      } catch (error) {
+        console.error('Erro ao excluir fatura:', error);
+        // Ensure deleteErrorMessages has something if it's still empty
+        if (this.deleteErrorMessages.length === 0) {
+          this.deleteErrorMessages = ['Ocorreu um erro inesperado ao tentar excluir a fatura.'];
+        }
+      } finally {
+        this.deletingBilling = false;
+      }
+    },
   }
 };
 </script>
