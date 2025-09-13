@@ -39,6 +39,11 @@ const routes = [
         path: "users",
         component: () => import("../components/UsersPage.vue"),
       },
+      {
+        path: "/charge-history",
+        name: "ChargeHistory",
+        component: () => import("../components/ChargeHistory.vue"),
+      },
     ],
   },
 ];

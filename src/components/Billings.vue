@@ -3,6 +3,9 @@
     <v-row>
       <v-col cols="12">
         <h2>Gerenciar Faturas</h2>
+        <v-btn color="primary" prepend-icon="mdi-plus-box" @click="openManualBillingDialog" class="ma-2">
+          Histórico de cobrança
+        </v-btn>
       </v-col>
     </v-row>
 
@@ -14,19 +17,11 @@
         <ClientCombo :clients="clients" label="Filtrar por Cliente" @selected="onClientSelected" variant="outlined"
           density="compact" clearable />
       </v-col>
-       <!-- Novo Filtro de Método de Pagamento -->
+      <!-- Novo Filtro de Método de Pagamento -->
       <v-col cols="12" md="4">
-        <v-select
-          label="Filtrar por Método de Pagamento"
-          :items="paymentMethodFilterOptions"
-          item-title="text"
-          item-value="value"
-          v-model="selectedPaymentMethod"
-          @update:modelValue="onPaymentMethodChange"
-          variant="outlined"
-          density="compact"
-          clearable
-        ></v-select>
+        <v-select label="Filtrar por Método de Pagamento" :items="paymentMethodFilterOptions" item-title="text"
+          item-value="value" v-model="selectedPaymentMethod" @update:modelValue="onPaymentMethodChange"
+          variant="outlined" density="compact" clearable></v-select>
       </v-col>
     </v-row>
 
@@ -92,7 +87,15 @@
                       @click="viewBillingItems(billing.id)"></v-btn>
                   </template>
                 </v-tooltip>
-                 <v-tooltip text="Excluir">
+
+                <v-tooltip text="Resumo da Fatura">
+                  <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" icon="mdi-receipt-text" color="deep-purple" variant="text" size="small"
+                      @click="openReceiptDialog(billing)"></v-btn>
+                  </template>
+                </v-tooltip>
+
+                <v-tooltip text="Excluir">
                   <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" icon="mdi-delete" color="error" variant="text" size="small"
                       @click="openDeleteDialog(billing)"></v-btn>
@@ -259,7 +262,8 @@
           </v-card-title>
           <v-card-text>
             <!-- Mensagens de Erro no Modal de Exclusão -->
-            <v-alert v-if="deleteErrorMessages.length" type="error" variant="tonal" border="start" density="compact" class="mb-3">
+            <v-alert v-if="deleteErrorMessages.length" type="error" variant="tonal" border="start" density="compact"
+              class="mb-3">
               <ul>
                 <li v-for="(error, index) in deleteErrorMessages" :key="`del-err-${index}`">{{ error }}</li>
               </ul>
@@ -274,17 +278,8 @@
             </div>
             <p class="font-weight-medium text-error">Esta ação não poderá ser desfeita.</p>
 
-            <v-textarea
-              v-model="deleteObservation"
-              label="Observação (obrigatório)" 
-              rows="3"
-              variant="outlined"
-              density="compact"
-              class="mt-4"
-              clearable
-              :rules="[rules.requiredField]"
-              required 
-            ></v-textarea>
+            <v-textarea v-model="deleteObservation" label="Observação (obrigatório)" rows="3" variant="outlined"
+              density="compact" class="mt-4" clearable :rules="[rules.requiredField]" required></v-textarea>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -293,6 +288,125 @@
             </v-btn>
             <v-btn color="error" type="submit" :loading="deletingBilling">
               Excluir Fatura
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showReceiptDialog" max-width="800px">
+      <v-card>
+        <v-card-title class="headline grey lighten-2">
+          Resumo da Fatura
+        </v-card-title>
+        <v-card-text>
+          <div v-if="loadingReceipt" class="text-center my-8">
+            <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+            <p class="mt-4">Carregando resumo...</p>
+          </div>
+
+          <v-alert v-if="receiptErrorMessages.length" type="error" variant="tonal" border="start" class="mb-4">
+            <ul>
+              <li v-for="(error, index) in receiptErrorMessages" :key="`receipt-err-${index}`">{{ error }}</li>
+            </ul>
+          </v-alert>
+
+          <div v-if="!loadingReceipt && receiptData.client">
+            <h3 class="text-h6 mb-2">Dados do Cliente</h3>
+            <p><strong>Nome:</strong> {{ receiptData.client.name }}</p>
+            <p><strong>Email:</strong> {{ receiptData.client.email }}</p>
+            <p><strong>Telefone:</strong> {{ receiptData.client.phone }}</p>
+
+            <v-divider class="my-4"></v-divider>
+
+            <h3 class="text-h6 mb-2">Itens Inclusos</h3>
+            <v-table v-if="receiptData.items.length" density="compact" class="mb-4">
+              <thead class="bg-grey-lighten-5">
+                <tr>
+                  <th class="text-left">Descrição</th>
+                  <th class="text-left">Data</th>
+                  <th class="text-right">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in receiptData.items" :key="item.id">
+                  <td>{{ item.description }}</td>
+                  <td>{{ formatDateWithoutHour(item.purchasedAt) }}</td>
+                  <td class="text-right">{{ currency(item.amount) }}</td>
+                </tr>
+              </tbody>
+            </v-table>
+            <v-alert v-else type="info" variant="tonal">Nenhum item encontrado.</v-alert>
+
+            <v-divider class="my-4"></v-divider>
+
+            <div class="d-flex justify-end text-h6">
+              <strong>Total:</strong>
+              <span class="ml-4 font-weight-bold text-primary">{{ currency(receiptTotal) }}</span>
+            </div>
+          </div>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey darken-1" text @click="showReceiptDialog = false">
+            Fechar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showManualBillingDialog" max-width="700px" persistent>
+      <v-card>
+        <v-form ref="manualBillingForm" @submit.prevent="saveManualBilling">
+          <v-card-title class="headline grey lighten-2">
+            Registrar Cobrança no Histórico
+          </v-card-title>
+          <v-card-text class="pt-4">
+            <v-alert v-if="manualBillingErrors.length" type="error" variant="tonal" border="start" density="compact"
+              class="mb-4" closable @update:modelValue="manualBillingErrors = []">
+              <ul>
+                <li v-for="(error, index) in manualBillingErrors" :key="`man-err-${index}`">{{ error }}</li>
+              </ul>
+            </v-alert>
+
+            <v-row>
+              <v-col cols="12">
+                <ClientCombo v-model="manualBilling.clientId" :clients="clients" label="Selecione o Cliente"
+                  :rules="[rules.required]" variant="outlined" density="compact" required />
+              </v-col>
+
+              <v-col cols="12">
+                <v-textarea v-model="manualBilling.description" label="Descrição (Ex: Cobrança via WhatsApp)" rows="3"
+                  variant="outlined" density="compact" :rules="[rules.requiredField]" required></v-textarea>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <CurrencyInput label="Valor cobrado" v-model="manualBilling.amount" :options="{ currency: 'BRL' }"
+                  :rules="[rules.requiredField, rules.positiveValue]" variant="outlined" density="compact" required />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-menu :close-on-content-click="false" location="bottom">
+                  <template v-slot:activator="{ props }">
+                    <v-text-field v-bind="props" :model-value="formatDateWithoutHour(manualBilling.createdAt)"
+                      label="Data da Ocorrência" prepend-inner-icon="mdi-calendar" readonly variant="outlined"
+                      density="compact" :rules="[rules.requiredField]"></v-text-field>
+                  </template>
+                  <v-date-picker v-model="manualBilling.createdAt"
+                    @update:model-value="newDate => manualBilling.createdAt = newDate" hide-actions
+                    title="Selecione a Data" color="primary"></v-date-picker>
+                </v-menu>
+              </v-col>
+            </v-row>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="grey darken-1" text @click="closeManualBillingDialog" :disabled="savingManualBilling">
+              Cancelar
+            </v-btn>
+            <v-btn color="primary" type="submit" :loading="savingManualBilling">
+              Salvar
             </v-btn>
           </v-card-actions>
         </v-form>
@@ -359,25 +473,53 @@ export default {
       selectedPaymentMethod: null,
       showDeleteDialog: false,
       rules: {
-        requiredField: value => !!(value && value.trim()) || 'Este campo é obrigatório.',
-      },
+  // Regra genérica para campos obrigatórios (seleções, números, etc.)
+  required: value => !!value || 'Este campo é obrigatório.',
+  
+  // Regra específica para campos de TEXTO obrigatórios (impede apenas espaços em branco)
+  requiredField: value => (!!value && !!String(value).trim()) || 'Este campo é obrigatório.',
+  
+  positiveValue: value => (value && parseFloat(value) > 0) || 'O valor deve ser maior que zero.',
+},
       deleteErrorMessages: [],
       deleteObservation: '',
       deletingBilling: false,
+      showReceiptDialog: false,
+      loadingReceipt: false,
+      receiptData: { // Inicializado para evitar erros no template
+        client: {},
+        items: []
+      },
+      receiptErrorMessages: [],
+      showManualBillingDialog: false,
+      savingManualBilling: false,
+      manualBilling: {
+        clientId: null,
+        description: '',
+        amount: 0,
+        createdAt: new Date(), // Inicia com a data atual
+      },
+      manualBillingErrors: [],
     };
   },
   computed: {
+    receiptTotal() {
+      if (!this.receiptData || !this.receiptData.items) {
+        return 0;
+      }
+      return this.receiptData.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    },
     totalPages() {
       if (!this.totalRows || this.totalRows <= 0) return 0;
       return Math.ceil(this.totalRows / this.pageSize);
     },
-     paymentMethodFilterOptions() {
+    paymentMethodFilterOptions() {
       return Object.values(TransactionPaymentMethodEnum).map(value => ({
         text: this.getPaymentMethodText(value),
         value: value,
       }));
     },
-     paymentMethodDialogOptions() {
+    paymentMethodDialogOptions() {
       return Object.values(TransactionPaymentMethodEnum)
         .filter(value => value !== TransactionPaymentMethodEnum.TO_RECEIVE) // 'A Receber' usually isn't a payment option
         .map(value => ({
@@ -391,7 +533,90 @@ export default {
     this.fetchClients();
   },
   methods: {
-       getPaymentMethodText(methodValue) {
+    openManualBillingDialog() {
+      // Reseta o formulário para um novo lançamento
+      this.manualBilling = {
+        clientId: null,
+        description: '',
+        amount: 0,
+        createdAt: new Date(), // Garante que a data é um objeto Date para o v-date-picker
+      };
+      this.manualBillingErrors = [];
+      // Aguarda o DOM ser atualizado para resetar a validação
+      this.$nextTick(() => {
+        this.$refs.manualBillingForm?.resetValidation();
+      });
+      this.showManualBillingDialog = true;
+    },
+
+    closeManualBillingDialog() {
+      this.showManualBillingDialog = false;
+    },
+
+    async saveManualBilling() {
+      this.manualBillingErrors = [];
+      const { valid } = await this.$refs.manualBillingForm.validate();
+      if (!valid) {
+        return;
+      }
+
+      this.savingManualBilling = true;
+      try {
+        const payload = {
+          ...this.manualBilling,
+          // Garante que a data seja enviada em um formato padrão (ISO String)
+          createdAt: this.manualBilling.createdAt.toISOString(),
+        };
+
+        // A API deve ser capaz de receber este payload para criar uma nova fatura
+        const response = await apiService.post(`/clients/${this.manualBilling.clientId.id}/register-charge`, payload);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw (data.message || 'Erro ao salvar a cobrança.');
+        }
+
+        // Sucesso
+        this.closeManualBillingDialog();
+        await this.fetchBillings(); // Atualiza a lista de faturas na tela
+        // Opcional: Exibir um snackbar de sucesso aqui.
+
+      } catch (error) {
+        console.error("Erro ao registrar cobrança manual:", error);
+        this.manualBillingErrors = Array.isArray(error) ? error : [String(error)];
+      } finally {
+        this.savingManualBilling = false;
+      }
+    },
+    async openReceiptDialog(billing) {
+      this.showReceiptDialog = true;
+      this.loadingReceipt = true;
+      this.receiptErrorMessages = [];
+      this.receiptData = { client: {}, items: [] }; // Limpa dados anteriores
+
+      try {
+        // Chamada ao novo endpoint da API
+        const response = await apiService.get(`/billings/${billing.id}/receipt-details`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          this.receiptErrorMessages = Array.isArray(data?.message) ? data.message : [data?.message || `Erro ${response.status} ao buscar o resumo.`];
+          throw new Error(this.receiptErrorMessages[0]);
+        }
+
+        // Sucesso
+        this.receiptData = data;
+
+      } catch (error) {
+        console.error('Erro ao buscar resumo da fatura:', error);
+        if (!this.receiptErrorMessages.length) {
+          this.receiptErrorMessages = ['Ocorreu um erro inesperado ao carregar os dados.'];
+        }
+      } finally {
+        this.loadingReceipt = false;
+      }
+    },
+    getPaymentMethodText(methodValue) {
       return paymentMethodDisplayMap[methodValue] || methodValue;
     },
     formatInputDate(date) {
@@ -486,7 +711,7 @@ export default {
         if (this.selectedClientId) {
           url += `&clientId=${this.selectedClientId}`;
         }
-           if (this.selectedPaymentMethod) { // Added filter
+        if (this.selectedPaymentMethod) { // Added filter
           url += `&paymentMethod=${this.selectedPaymentMethod}`;
         }
         const response = await apiService.get(url);
@@ -723,7 +948,7 @@ export default {
       }
     },
 
-   async confirmDeleteBilling() {
+    async confirmDeleteBilling() {
       this.deleteErrorMessages = []; // Clear API error messages
 
       // Validate the form using the ref
@@ -754,7 +979,7 @@ export default {
           let errorData;
           try {
             errorData = await response.json(); // Try to parse error response
-            
+
           } catch (e) {
             // Fallback if response is not JSON or some other network error
             errorData = { message: `Erro ${response.status} ao excluir a fatura. Detalhes: ${response.statusText}` };
@@ -771,8 +996,8 @@ export default {
         await this.fetchBillings(this.currentPage, this.pageSize);
 
         if (this.billings.length === 0 && this.currentPage > 1) {
-            this.currentPage--;
-            await this.fetchBillings(this.currentPage, this.pageSize);
+          this.currentPage--;
+          await this.fetchBillings(this.currentPage, this.pageSize);
         }
 
       } catch (error) {

@@ -1,64 +1,30 @@
 <template>
   <v-app>
     <!-- Navigation Drawer (Sidebar) -->
-    <v-navigation-drawer
-      v-model="drawer"
-      app
-      color="grey-lighten-4"
-      :permanent="$vuetify.display.mdAndUp"
-      :temporary="$vuetify.display.smAndDown"
-    >
+    <v-navigation-drawer v-model="drawer" app color="grey-lighten-4" :permanent="$vuetify.display.mdAndUp"
+      :temporary="$vuetify.display.smAndDown">
       <v-list density="compact" nav>
         <!-- Itens de Navegação -->
-        <v-list-item
-          prepend-icon="mdi-view-dashboard"
-          title="Home"
-          value="home"
-          to="/"
-          exact
-        ></v-list-item>
+        <v-list-item prepend-icon="mdi-view-dashboard" title="Home" value="home" to="/" exact></v-list-item>
         <v-divider></v-divider>
         <v-list-subheader>Gerenciar</v-list-subheader>
-        <v-list-item
-          prepend-icon="mdi-package-variant-closed"
-          title="Produtos"
-          value="products"
-          to="/dashboard/products"
-        ></v-list-item>
-        <v-list-item
-          prepend-icon="mdi-account-group"
-          title="Clientes"
-          value="clients"
-          to="/dashboard/clients"
-        ></v-list-item>
-        <v-list-item
-          prepend-icon="mdi-cart"
-          title="Vendas"
-          value="sales"
-          to="/dashboard/sales"
-        ></v-list-item>
-        <v-list-item
-          prepend-icon="mdi-file-document"
-          title="Faturas"
-          value="billings"
-          to="/dashboard/billings"
-        ></v-list-item>
-        <v-list-item
-          prepend-icon="mdi-account-cog"
-          title="Usuários"
-          value="users"
-          to="/dashboard/users"
-        ></v-list-item>
+        <v-list-item prepend-icon="mdi-package-variant-closed" title="Produtos" value="products"
+          to="/dashboard/products"></v-list-item>
+        <v-list-item prepend-icon="mdi-account-group" title="Clientes" value="clients"
+          to="/dashboard/clients"></v-list-item>
+        <v-list-item prepend-icon="mdi-cart" title="Vendas" value="sales" to="/dashboard/sales"></v-list-item>
+        <v-list-item prepend-icon="mdi-file-document" title="Faturas" value="billings"
+          to="/dashboard/billings"></v-list-item>
+        <v-list-item prepend-icon="mdi-account-cog" title="Usuários" value="users" to="/dashboard/users"></v-list-item>
+        <v-list-item prepend-icon="mdi-history" title="Histórico de Lançamentos" to="/charge-history"
+          exact></v-list-item>
       </v-list>
     </v-navigation-drawer>
 
     <!-- App Bar (Navbar) -->
     <v-app-bar app color="primary" dark density="compact">
       <!-- Ícone para Toggler o Drawer em Telas Menores -->
-      <v-app-bar-nav-icon
-        @click="drawer = !drawer"
-        class="d-md-none"
-      ></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon @click="drawer = !drawer" class="d-md-none"></v-app-bar-nav-icon>
 
       <v-app-bar-title>Admin</v-app-bar-title>
 
@@ -149,11 +115,13 @@ onMounted(() => {
 <style scoped>
 /* Estilos específicos do componente, se necessário. Vuetify cuida da maioria. */
 .v-list-item--active {
-    /* background-color: rgba(var(--v-theme-primary), 0.1); /* Exemplo de destaque */
-    color: rgb(var(--v-theme-primary));
+  /* background-color: rgba(var(--v-theme-primary), 0.1); /* Exemplo de destaque */
+  color: rgb(var(--v-theme-primary));
 }
-.v-list-item__prepend > .v-icon {
-    margin-inline-end: 16px; /* Ajuste do espaçamento do ícone padrão do Vuetify 3 */
+
+.v-list-item__prepend>.v-icon {
+  margin-inline-end: 16px;
+  /* Ajuste do espaçamento do ícone padrão do Vuetify 3 */
 }
 
 /* Ajuste fino para espaçamento no footer */
