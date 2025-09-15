@@ -473,14 +473,14 @@ export default {
       selectedPaymentMethod: null,
       showDeleteDialog: false,
       rules: {
-  // Regra genérica para campos obrigatórios (seleções, números, etc.)
-  required: value => !!value || 'Este campo é obrigatório.',
-  
-  // Regra específica para campos de TEXTO obrigatórios (impede apenas espaços em branco)
-  requiredField: value => (!!value && !!String(value).trim()) || 'Este campo é obrigatório.',
-  
-  positiveValue: value => (value && parseFloat(value) > 0) || 'O valor deve ser maior que zero.',
-},
+        // Regra genérica para campos obrigatórios (seleções, números, etc.)
+        required: value => !!value || 'Este campo é obrigatório.',
+
+        // Regra específica para campos de TEXTO obrigatórios (impede apenas espaços em branco)
+        requiredField: value => (!!value && !!String(value).trim()) || 'Este campo é obrigatório.',
+
+        positiveValue: value => (value && parseFloat(value) > 0) || 'O valor deve ser maior que zero.',
+      },
       deleteErrorMessages: [],
       deleteObservation: '',
       deletingBilling: false,
@@ -509,13 +509,13 @@ export default {
       }
       // Exclude items whose description contains 'Crédito'
       return this.receiptData.items
-    .reduce((sum, item) => {
-      const isCredito = String(item.description)
-        .toLowerCase()
-        .includes('crédito');
-      const amount = parseFloat(item.amount) || 0;
-      return isCredito ? sum - amount : sum + amount;
-    }, 0);
+        .reduce((sum, item) => {
+          const isCredito = String(item.description)
+            .toLowerCase()
+            .includes('crédito');
+          const amount = parseFloat(item.amount) || 0;
+          return isCredito ? sum - amount : sum + amount;
+        }, 0);
     },
     totalPages() {
       if (!this.totalRows || this.totalRows <= 0) return 0;
