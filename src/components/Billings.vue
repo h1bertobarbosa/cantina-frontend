@@ -507,7 +507,10 @@ export default {
       if (!this.receiptData || !this.receiptData.items) {
         return 0;
       }
-      return this.receiptData.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+      // Exclude items whose description contains 'Crédito'
+      return this.receiptData.items
+        .filter(item => !String(item.description).toLowerCase().includes('crédito'))
+        .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
     },
     totalPages() {
       if (!this.totalRows || this.totalRows <= 0) return 0;
