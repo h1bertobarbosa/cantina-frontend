@@ -509,8 +509,13 @@ export default {
       }
       // Exclude items whose description contains 'Crédito'
       return this.receiptData.items
-        .filter(item => !String(item.description).toLowerCase().includes('crédito'))
-        .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    .reduce((sum, item) => {
+      const isCredito = String(item.description)
+        .toLowerCase()
+        .includes('crédito');
+      const amount = parseFloat(item.amount) || 0;
+      return isCredito ? sum - amount : sum + amount;
+    }, 0);
     },
     totalPages() {
       if (!this.totalRows || this.totalRows <= 0) return 0;
