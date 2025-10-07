@@ -81,16 +81,10 @@
                   </template>
                 </v-tooltip>
 
+
                 <v-tooltip text="Ver Itens">
                   <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" icon="mdi-format-list-bulleted" color="primary" variant="text" size="small"
-                      @click="viewBillingItems(billing.id)"></v-btn>
-                  </template>
-                </v-tooltip>
-
-                <v-tooltip text="Resumo da Fatura">
-                  <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" icon="mdi-receipt-text" color="deep-purple" variant="text" size="small"
                       @click="openReceiptDialog(billing)"></v-btn>
                   </template>
                 </v-tooltip>
