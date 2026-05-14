@@ -3,7 +3,8 @@
 </template>
 
 <script>
-import { useCurrencyInput } from 'vue-currency-input'
+import { watch } from 'vue';
+import { useCurrencyInput } from 'vue-currency-input';
 
 export default {
   name: 'CurrencyInput',
@@ -11,10 +12,31 @@ export default {
     modelValue: Number, // Vue 2: value
     options: Object
   },
-  setup(props) {
-    const { inputRef } = useCurrencyInput(props.options)
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    const { inputRef, numberValue, setValue, setOptions } = useCurrencyInput(props.options);
 
-    return { inputRef }
+    watch(
+      () => props.modelValue,
+      (value) => {
+        setValue(value ?? null);
+      },
+      { immediate: true }
+    );
+
+    watch(
+      () => props.options,
+      (value) => {
+        setOptions(value);
+      },
+      { deep: true }
+    );
+
+    watch(numberValue, (value) => {
+      emit('update:modelValue', value ?? 0);
+    });
+
+    return { inputRef };
   }
-}
+};
 </script>

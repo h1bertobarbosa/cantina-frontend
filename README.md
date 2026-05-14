@@ -98,6 +98,10 @@ Este é um sistema web desenvolvido em **Vue.js** para gerenciamento de produtos
     - Use o menu lateral para acessar as diferentes seções: Produtos, Vendas, Clientes, Faturas, Usuários.
     - Em cada seção, você pode realizar as operações CRUD (Create, Read, Update, Delete) conforme permitido.
 
+## Padrão de layout
+
+As regras visuais e de consistência do frontend estão documentadas em [LAYOUT_RULES.md](./LAYOUT_RULES.md).
+
 ## Contribuindo
 
 Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou pull requests.

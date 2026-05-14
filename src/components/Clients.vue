@@ -1,264 +1,695 @@
 <template>
-  <div>
-    <div>
-      <div v-if="errorMessages.length" class="alert alert-danger">
+  <section class="clients-page">
+    <div v-if="errorMessages.length" class="p-message p-message-error clients-alert">
+      <div class="clients-alert-content">
+        <i class="pi pi-exclamation-circle"></i>
         <ul>
           <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
         </ul>
       </div>
     </div>
-    <h2>Gerenciar Clientes</h2>
-    <button class="btn btn-primary mb-3" @click="addClient()">Adicionar Cliente</button>
 
-    <div v-if="!clients.length" class="card bg-info text-white">
-      <div class="card-body">Nenhuma informação para ser exibida</div>
-    </div>
-    <!-- Tabela de clientes -->
-    <table v-else class="table table-bordered">
-      <thead>
-        <tr>
-          <th>Nome</th>
-          <th>Telefone</th>
-          <th>Email</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="client in clients" :key="client.id">
-          <td>{{ client.name }}</td>
-          <td>{{ client.phone }}</td>
-          <td>{{ client.email }}</td>
-          <td>
-            <button class="btn btn-info btn-sm" @click="viewClient(client)">Detalhes</button>
-            <button class="btn btn-warning btn-sm" @click="editClient(client)">Editar</button>
-            <button class="btn btn-danger btn-sm" @click="deleteClient(client.id)">Excluir</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <Card class="clients-card surface-card">
+      <template #content>
+        <div class="clients-toolbar">
+          <div>
+            <span class="clients-eyebrow">Relacionamento</span>
+            <h2>Gerenciar clientes</h2>
+            <p>Encontre, cadastre e acompanhe os dados dos clientes da cantina.</p>
+          </div>
 
+          <Button
+            label="Adicionar Cliente"
+            icon="pi pi-plus"
+            class="clients-add-button"
+            @click="addClient"
+          />
+        </div>
 
+        <div class="clients-filters">
+          <IconField iconPosition="left" class="clients-search">
+            <InputIcon class="pi pi-search" />
+            <InputText
+              v-model="searchTerm"
+              type="text"
+              placeholder="Buscar por nome, telefone ou email"
+              @input="onSearchInput"
+            />
+          </IconField>
+        </div>
 
-    <!-- Modal para Adicionar/Editar cliente -->
-    <div class="modal" tabindex="-1" role="dialog" v-if="showClientModal">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <form @submit.prevent="saveClient">
-            <div class="modal-header">
-              <h5 class="modal-title">{{ isEditing ? 'Editar cliente' : 'Adicionar cliente' }}</h5>
-              <button type="button" class="close" @click="closeClientModal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
+        <DataTable
+          :value="clients"
+          :loading="isLoading"
+          responsiveLayout="scroll"
+          class="clients-table"
+        >
+          <template #empty>
+            <div class="clients-empty">
+              <i class="pi pi-users"></i>
+              <strong>Nenhum cliente encontrado</strong>
+              <span>Ajuste a busca ou adicione um novo cliente.</span>
             </div>
-            <div class="modal-body">
-              <!-- Exibição das mensagens de erro -->
-              <div v-if="errorMessages.length" class="alert alert-danger">
-                <ul>
-                  <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
-                </ul>
+          </template>
+
+          <Column header="Cliente">
+            <template #body="{ data }">
+              <div class="client-identity">
+                <Avatar
+                  :label="getInitials(data.name)"
+                  shape="circle"
+                  class="client-avatar"
+                />
+                <div>
+                  <strong>{{ data.name }}</strong>
+                  <span>{{ data.email }}</span>
+                </div>
               </div>
-              <!-- Campos do formulário -->
-              <div class="form-group">
-                <label for="productName">Nome</label>
-                <input type="text" class="form-control" id="productName" v-model="currentClient.name" required />
+            </template>
+          </Column>
+
+          <Column field="phone" header="Telefone"></Column>
+
+          <Column header="Criado em">
+            <template #body="{ data }">
+              {{ formatDateHour(data.createdAt) }}
+            </template>
+          </Column>
+
+          <Column header="Ações" bodyClass="clients-actions-cell" headerClass="clients-actions-header">
+            <template #body="{ data }">
+              <div class="clients-actions">
+                <Button
+                  icon="pi pi-eye"
+                  severity="info"
+                  rounded
+                  text
+                  aria-label="Ver detalhes"
+                  @click="viewClient(data)"
+                />
+                <Button
+                  icon="pi pi-pencil"
+                  severity="warning"
+                  rounded
+                  text
+                  aria-label="Editar cliente"
+                  @click="editClient(data)"
+                />
+                <Button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  rounded
+                  text
+                  aria-label="Excluir cliente"
+                  @click="confirmDeleteClient(data)"
+                />
               </div>
-              <div class="form-group">
-                <label for="productName">Telefone</label>
-                <input type="text" class="form-control" id="productPhone" v-model="currentClient.phone"
-                  v-mask="'(##) #####-####'" required />
-              </div>
-              <div class="form-group">
-                <label for="productName">Email</label>
-                <input type="text" class="form-control" id="productEmail" v-model="currentClient.email" required />
-              </div>
-              <!-- Outros campos do cliente podem ser adicionados aqui -->
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" @click="closeClientModal">
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn-primary">
-                {{ isEditing ? 'Atualizar' : 'Salvar' }}
-              </button>
-            </div>
-          </form>
+            </template>
+          </Column>
+        </DataTable>
+
+        <div class="clients-pagination">
+          <span>Página {{ pagination.page }} de {{ totalPages }}</span>
+          <Paginator
+            :first="firstRow"
+            :rows="pagination.perPage"
+            :totalRecords="pagination.total"
+            :rowsPerPageOptions="[10]"
+            template="PrevPageLink PageLinks NextPageLink"
+            @page="onPageChange"
+          />
+        </div>
+      </template>
+    </Card>
+
+    <Dialog
+      v-model:visible="showClientModal"
+      modal
+      :header="isEditing ? 'Editar cliente' : 'Adicionar cliente'"
+      class="clients-dialog"
+    >
+      <form class="clients-form" @submit.prevent="saveClient">
+        <div v-if="errorMessages.length" class="p-message p-message-error">
+          <div class="clients-alert-content">
+            <i class="pi pi-exclamation-circle"></i>
+            <ul>
+              <li v-for="(error, index) in errorMessages" :key="index">{{ error }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="clients-form-grid">
+          <div class="clients-field">
+            <label for="client-name">Nome</label>
+            <InputText id="client-name" v-model="currentClient.name" required />
+          </div>
+
+          <div class="clients-field">
+            <label for="client-phone">Telefone</label>
+            <InputText
+              id="client-phone"
+              v-model="currentClient.phone"
+              v-mask="'(##) #####-####'"
+              required
+            />
+          </div>
+
+          <div class="clients-field clients-field-full">
+            <label for="client-email">Email</label>
+            <InputText id="client-email" v-model="currentClient.email" type="email" required />
+          </div>
+        </div>
+
+        <div class="clients-form-actions">
+          <Button
+            type="button"
+            label="Cancelar"
+            severity="secondary"
+            text
+            @click="closeClientModal"
+          />
+          <Button type="submit" :label="isEditing ? 'Atualizar' : 'Salvar'" />
+        </div>
+      </form>
+    </Dialog>
+
+    <Dialog
+      v-model:visible="showDetailsModal"
+      modal
+      header="Detalhes do cliente"
+      class="clients-dialog"
+    >
+      <div class="client-details">
+        <div class="client-details-header">
+          <Avatar
+            :label="getInitials(currentClient.name)"
+            shape="circle"
+            class="client-avatar client-avatar-large"
+          />
+          <div>
+            <strong>{{ currentClient.name }}</strong>
+            <span>{{ currentClient.email }}</span>
+          </div>
+        </div>
+
+        <div class="client-details-grid">
+          <div>
+            <small>Telefone</small>
+            <strong>{{ currentClient.phone }}</strong>
+          </div>
+          <div>
+            <small>Criado em</small>
+            <strong>{{ formatDateHour(currentClient.createdAt) }}</strong>
+          </div>
+          <div>
+            <small>Atualizado em</small>
+            <strong>{{ formatDateHour(currentClient.updatedAt) }}</strong>
+          </div>
         </div>
       </div>
-    </div>
+    </Dialog>
 
-    <!-- Modal para Visualizar Detalhes do Produto -->
-    <div class="modal" tabindex="-1" role="dialog" v-if="showDetailsModal">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Detalhes do Cliente</h5>
-            <button type="button" class="close" @click="closeDetailsModal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p><strong>Nome:</strong> {{ currentClient.name }}</p>
-            <p><strong>Telefone:</strong> {{ currentClient.phone }}</p>
-            <p><strong>Email:</strong> {{ currentClient.email }}</p>
-            <p><strong>Criado em:</strong> {{ currentClient.createdAt }}</p>
-            <p><strong>Última Atualização:</strong> {{ currentClient.updatedAt }}</p>
-            <!-- Outros detalhes do produto -->
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="closeDetailsModal">Fechar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <Dialog
+      v-model:visible="showDeleteModal"
+      modal
+      header="Excluir cliente"
+      class="clients-dialog clients-dialog-compact"
+    >
+      <p class="clients-delete-copy">
+        Tem certeza que deseja excluir <strong>{{ currentClient.name }}</strong>?
+      </p>
 
+      <template #footer>
+        <Button
+          type="button"
+          label="Cancelar"
+          severity="secondary"
+          text
+          @click="showDeleteModal = false"
+        />
+        <Button
+          type="button"
+          label="Excluir"
+          severity="danger"
+          @click="deleteClient"
+        />
+      </template>
+    </Dialog>
+  </section>
 </template>
 
 <script>
 import { apiService } from '../services/apiService';
+import { formatDateHour } from '../utils/formatDate';
+import Avatar from 'primevue/avatar';
+import Button from 'primevue/button';
+import Card from 'primevue/card';
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
+import Dialog from 'primevue/dialog';
+import IconField from 'primevue/iconfield';
+import InputIcon from 'primevue/inputicon';
+import InputText from 'primevue/inputtext';
+import Paginator from 'primevue/paginator';
+
+const emptyClient = () => ({
+  id: null,
+  name: '',
+  phone: '',
+  email: '',
+  createdAt: '',
+  updatedAt: ''
+});
+
 export default {
-  // eslint-disable-next-line vue/multi-word-component-names
-  name: 'Clients',
+  name: 'ClientsPage',
+  components: {
+    Avatar,
+    Button,
+    Card,
+    Column,
+    DataTable,
+    Dialog,
+    IconField,
+    InputIcon,
+    InputText,
+    Paginator
+  },
   data() {
     return {
       clients: [],
       showClientModal: false,
+      showDeleteModal: false,
       showDetailsModal: false,
       isEditing: false,
-      currentClient: {
-        id: null,
-        name: '',
-        phone: '',
-        email: '',
-        createdAt: '',
-        updatedAt: ''
-      },
-      errorMessages: []
+      isLoading: false,
+      currentClient: emptyClient(),
+      errorMessages: [],
+      searchTerm: '',
+      searchDebounceId: null,
+      pagination: {
+        page: 1,
+        perPage: 10,
+        total: 0
+      }
     };
+  },
+  computed: {
+    firstRow() {
+      return (this.pagination.page - 1) * this.pagination.perPage;
+    },
+    totalPages() {
+      return Math.max(1, Math.ceil(this.pagination.total / this.pagination.perPage));
+    }
   },
   created() {
     this.fetchClients();
   },
+  beforeUnmount() {
+    clearTimeout(this.searchDebounceId);
+  },
   methods: {
-    // Busca a lista de clientes do backend
+    formatDateHour,
     async fetchClients() {
-      try {
+      this.isLoading = true;
+      this.errorMessages = [];
 
-        const response = await apiService.get('/clients');
+      try {
+        const params = new URLSearchParams({
+          page: String(this.pagination.page),
+          perPage: String(this.pagination.perPage),
+          orderBy: 'name',
+          orderDir: 'asc'
+        });
+
+        if (this.searchTerm.trim()) {
+          params.set('search', this.searchTerm.trim());
+        }
+
+        const response = await apiService.get(`/clients?${params.toString()}`);
+
         if (!response.ok) {
           const errorData = await response.json();
-          if (errorData.message) {
-            this.errorMessages = Array.isArray(errorData.message)
-              ? errorData.message
-              : [errorData.message];
-          } else {
-            this.errorMessages = ['Erro ao buscar clientes'];
-          }
+          this.errorMessages = Array.isArray(errorData.message)
+            ? errorData.message
+            : [errorData.message || 'Erro ao buscar clientes'];
           return;
         }
-        const clients = await response.json();
-        this.clients = clients.data;
+
+        const result = await response.json();
+        this.clients = result.data;
+        this.pagination = {
+          page: Number(result.meta.page),
+          perPage: Number(result.meta.perPage),
+          total: Number(result.meta.total)
+        };
       } catch (error) {
         console.error(error);
         this.errorMessages = ['Erro ao buscar clientes'];
+      } finally {
+        this.isLoading = false;
       }
     },
-    // Abre o modal para adicionar um novo cliente
+    onSearchInput() {
+      clearTimeout(this.searchDebounceId);
+      this.searchDebounceId = setTimeout(() => {
+        this.pagination.page = 1;
+        this.fetchClients();
+      }, 300);
+    },
+    onPageChange(event) {
+      this.pagination.page = Math.floor(event.first / event.rows) + 1;
+      this.fetchClients();
+    },
     addClient() {
       this.isEditing = false;
-      this.currentClient = {
-        id: null,
-        name: '',
-        price: 0
-      };
+      this.errorMessages = [];
+      this.currentClient = emptyClient();
       this.showClientModal = true;
     },
-    // Abre o modal para editar um cliente existente
     editClient(client) {
       this.isEditing = true;
+      this.errorMessages = [];
       this.currentClient = { ...client };
       this.showClientModal = true;
     },
-    // Salva o cliente (adiciona ou atualiza)
-    async saveClient() {
-      this.errorMessages = [];
-      try {
-        const method = this.isEditing ? 'put' : 'post';
-        const url = this.isEditing
-          ? `/clients/${this.currentClient.id}`
-          : '/clients';
-
-        const response = await apiService[method](url, this.currentClient);
-
-        if (!response.ok) {
-          // Captura o corpo da resposta de erro
-          const errorData = await response.json();
-
-          // Verifica se há uma propriedade 'message' na resposta
-          if (errorData.message) {
-            // Se 'message' for um array, usa diretamente; se for uma string, coloca em um array
-            this.errorMessages = Array.isArray(errorData.message)
-              ? errorData.message
-              : [errorData.message];
-          } else {
-            // Mensagem genérica caso não haja 'message' na resposta
-            this.errorMessages = ['Erro ao salvar o cliente.'];
-          }
-          return; // Encerra a execução se houver erro
-        }
-        this.fetchClients();
-        this.closeClientModal();
-      } catch (error) {
-        console.error(error);
-        alert('Erro ao salvar o cliente2');
-      }
-    },
-    // Deleta um cliente
-    async deleteClient(id) {
-      if (confirm('Tem certeza que deseja excluir este cliente?')) {
-        try {
-          const response = await apiService.delete(`/clients/${id}`);
-          if (!response.ok) {
-            throw new Error('Erro ao excluir o cliente');
-          }
-          this.fetchClients();
-        } catch (error) {
-          console.error(error);
-          alert('Erro ao excluir o cliente');
-        }
-      }
-    },
-    // Visualiza detalhes de um cliente
     viewClient(client) {
       this.currentClient = { ...client };
       this.showDetailsModal = true;
     },
-    // Fecha o modal de adicionar/editar cliente
+    confirmDeleteClient(client) {
+      this.currentClient = { ...client };
+      this.showDeleteModal = true;
+    },
+    async saveClient() {
+      this.errorMessages = [];
+
+      try {
+        const method = this.isEditing ? 'put' : 'post';
+        const url = this.isEditing ? `/clients/${this.currentClient.id}` : '/clients';
+        const payload = {
+          name: this.currentClient.name,
+          phone: this.currentClient.phone,
+          email: this.currentClient.email
+        };
+
+        const response = await apiService[method](url, payload);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          this.errorMessages = Array.isArray(errorData.message)
+            ? errorData.message
+            : [errorData.message || 'Erro ao salvar o cliente'];
+          return;
+        }
+
+        this.closeClientModal();
+        await this.fetchClients();
+      } catch (error) {
+        console.error(error);
+        this.errorMessages = ['Erro ao salvar o cliente'];
+      }
+    },
+    async deleteClient() {
+      try {
+        const response = await apiService.delete(`/clients/${this.currentClient.id}`);
+
+        if (!response.ok) {
+          throw new Error('Erro ao excluir o cliente');
+        }
+
+        this.showDeleteModal = false;
+
+        if (this.clients.length === 1 && this.pagination.page > 1) {
+          this.pagination.page -= 1;
+        }
+
+        await this.fetchClients();
+      } catch (error) {
+        console.error(error);
+        this.errorMessages = ['Erro ao excluir o cliente'];
+      }
+    },
     closeClientModal() {
       this.showClientModal = false;
+      this.currentClient = emptyClient();
+      this.errorMessages = [];
     },
-    // Fecha o modal de detalhes do cliente
-    closeDetailsModal() {
-      this.showDetailsModal = false;
-    }
-  },
-  filters: {
-    // Filtro para formatar o valor como moeda
-    currency(value) {
-      return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
+    getInitials(name) {
+      return (name || '')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0].toUpperCase())
+        .join('');
     }
   }
 };
 </script>
 
 <style scoped>
-/* Estilos para os modais */
-.modal {
-  display: block;
-  background-color: rgba(0, 0, 0, 0.5);
+.clients-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.modal-dialog {
-  margin-top: 10%;
+.clients-alert {
+  border-radius: 18px;
+  padding: 14px 18px;
+}
+
+.clients-alert-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.clients-alert-content ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.clients-card :deep(.p-card-body) {
+  padding: 28px;
+}
+
+.clients-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.clients-eyebrow {
+  color: var(--app-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.clients-toolbar h2 {
+  margin: 10px 0 8px;
+  font-size: 1.8rem;
+}
+
+.clients-toolbar p {
+  margin: 0;
+  color: var(--app-surface-muted);
+}
+
+.clients-add-button {
+  background: linear-gradient(135deg, var(--app-primary) 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 14px;
+  padding-inline: 1.2rem;
+  box-shadow: 0 16px 30px rgba(29, 78, 216, 0.22);
+}
+
+.clients-filters {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+
+.clients-search {
+  width: min(100%, 360px);
+}
+
+.clients-search :deep(.p-inputtext) {
+  width: 100%;
+  border-radius: 14px;
+}
+
+.clients-table :deep(.p-datatable-table-container) {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(219, 228, 240, 0.9);
+}
+
+.clients-table :deep(th) {
+  background: #f8fbff;
+  color: #48607f;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 18px 20px;
+}
+
+.clients-table :deep(td) {
+  padding: 20px;
+  vertical-align: middle;
+}
+
+.client-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.client-identity span {
+  display: block;
+  margin-top: 4px;
+  color: var(--app-surface-muted);
+}
+
+.client-identity strong,
+.client-details-header strong {
+  display: block;
+}
+
+.client-avatar {
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.18) 0%, rgba(96, 165, 250, 0.32) 100%);
+  color: var(--app-primary-dark);
+  font-weight: 700;
+}
+
+.client-avatar-large {
+  width: 64px;
+  height: 64px;
+  font-size: 1.35rem;
+}
+
+.clients-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clients-actions-cell,
+.clients-actions-header {
+  width: 140px;
+}
+
+.clients-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+  color: var(--app-surface-muted);
+}
+
+.clients-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.clients-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.clients-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clients-field label {
+  font-weight: 600;
+}
+
+.clients-field-full {
+  grid-column: 1 / -1;
+}
+
+.clients-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.client-details {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.client-details-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.client-details-header span,
+.client-details-grid small {
+  color: var(--app-surface-muted);
+}
+
+.client-details-header span {
+  display: block;
+  margin-top: 4px;
+}
+
+.client-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.client-details-grid strong {
+  display: block;
+  margin-top: 6px;
+}
+
+.clients-delete-copy {
+  margin: 0;
+  color: var(--app-text);
+}
+
+.clients-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 38px 20px;
+  color: var(--app-surface-muted);
+}
+
+.clients-empty i {
+  font-size: 2rem;
+  color: var(--app-primary);
+}
+
+.clients-dialog :deep(.p-dialog-content) {
+  padding-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .clients-toolbar,
+  .clients-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .clients-form-grid,
+  .client-details-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

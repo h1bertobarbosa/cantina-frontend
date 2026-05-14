@@ -1,0 +1,91 @@
+:root {
+  --app-font-family: 'Inter', 'Roboto', sans-serif;
+  --app-surface: #f3f6fb;
+  --app-surface-card: #ffffff;
+  --app-surface-border: #dbe4f0;
+  --app-surface-muted: #6b7a90;
+  --app-text: #112038;
+  --app-primary: #1d4ed8;
+  --app-primary-dark: #173ea6;
+  --app-sidebar: #10233f;
+  --app-sidebar-hover: rgba(148, 163, 184, 0.12);
+  --app-sidebar-active: rgba(59, 130, 246, 0.24);
+  --app-success: #0f9f6e;
+  --app-warning: #f59e0b;
+  --app-danger: #dc2626;
+  --app-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  --app-control-radius: 14px;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--app-font-family);
+  color: var(--app-text);
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.18), transparent 28%),
+    linear-gradient(180deg, #eef4ff 0%, var(--app-surface) 34%, #edf2f9 100%);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+input:not([type='checkbox']):not([type='radio']),
+textarea,
+select,
+.form-control,
+.p-inputtext,
+.p-select,
+.p-inputnumber,
+.p-inputnumber-input,
+.p-multiselect,
+.p-datepicker-input,
+.p-password-input {
+  border-radius: var(--app-control-radius);
+}
+
+.p-select,
+.p-inputnumber,
+.p-multiselect,
+.p-password {
+  overflow: hidden;
+  border-radius: var(--app-control-radius);
+}
+
+.p-select:focus-within,
+.p-inputnumber:focus-within,
+.p-multiselect:focus-within,
+.p-password:focus-within,
+.form-control:focus,
+input:not([type='checkbox']):not([type='radio']):focus,
+textarea:focus,
+select:focus {
+  border-radius: var(--app-control-radius);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page-shell {
+  min-height: 100vh;
+}
+
+.surface-card {
+  background: var(--app-surface-card);
+  border: 1px solid rgba(219, 228, 240, 0.8);
+  border-radius: 24px;
+  box-shadow: var(--app-shadow);
+}

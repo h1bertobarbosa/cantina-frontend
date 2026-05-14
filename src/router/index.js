@@ -36,6 +36,10 @@ const routes = [
         component: () => import("../components/Billings.vue"),
       },
       {
+        path: "billings/:id/customer-summary",
+        component: () => import("../components/BillingCustomerSummary.vue"),
+      },
+      {
         path: "users",
         component: () => import("../components/Users.vue"),
       },

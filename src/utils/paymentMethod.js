@@ -1,7 +1,10 @@
 export function formatPaymentMethod(paymentMethod) {
-  if (paymentMethod === 'TO_RECEIVE') {
-    return 'à Receber';
-  }
+  const labels = {
+    CASH: 'Dinheiro',
+    CREDIT_CARD: 'Cartão de Crédito',
+    PIX: 'PIX',
+    TO_RECEIVE: 'à Receber'
+  };
 
-  return paymentMethod;
+  return labels[paymentMethod] || paymentMethod;
 }
