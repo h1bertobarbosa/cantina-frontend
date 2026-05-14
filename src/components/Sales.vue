@@ -29,12 +29,15 @@
           <tr v-for="sale in sales" :key="sale.id">
             <td>{{ sale.clientName }}</td>
             <td>{{ sale.description }}</td>
-            <td>{{ sale.paymentMethod }}</td>
+            <td>{{ formatPaymentMethod(sale.paymentMethod) }}</td>
             <td>{{ currency(sale.amount) }}</td>
             <td>{{ formatDate(sale.createdAt) }}</td>
             <td class="text-center">
               <button class="btn btn-info btn-sm" @click="viewSale(sale)">
                 <i class="fas fa-eye"></i> Detalhes
+              </button>
+              <button class="btn btn-primary btn-sm ml-1" @click="editSale(sale)">
+                <i class="fas fa-edit"></i> Editar
               </button>
               <button class="btn btn-danger btn-sm" @click="deleteSale(sale.id)">
                 <i class="fas fa-trash-alt"></i> Excluir
@@ -69,7 +72,7 @@
         <div class="modal-content">
           <form @submit.prevent="saveSale">
             <div class="modal-header">
-              <h5 class="modal-title">Adicionar Venda</h5>
+              <h5 class="modal-title">{{ isEditingSale ? 'Editar Venda' : 'Adicionar Venda' }}</h5>
               <button type="button" class="close" @click="closeSaleModal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
@@ -91,7 +94,7 @@
                   </option>
                 </select>
               </div>
-              <div class="form-group">
+              <div v-if="!isEditingSale" class="form-group">
                 <label for="client">Cliente</label>
                 <select class="form-control" id="client" v-model="currentSale.clientId" required>
                   <option value="" disabled>Selecione um cliente</option>
@@ -105,6 +108,10 @@
                 <input type="number" class="form-control" id="quantity" v-model="currentSale.quantity" required />
               </div>
               <div class="form-group">
+                <label for="saleDate">Data da Venda</label>
+                <input type="date" class="form-control" id="saleDate" v-model="currentSale.saleDate" />
+              </div>
+              <div v-if="!isEditingSale" class="form-group">
                 <label for="paymentMethod">Método de Pagamento</label>
                 <select class="form-control" id="paymentMethod" v-model="currentSale.paymentMethod" required>
                   <option value="" disabled>Selecione um método de pagamento</option>
@@ -121,7 +128,7 @@
               <button type="button" class="btn btn-secondary" @click="closeSaleModal">
                 Cancelar
               </button>
-              <button type="submit" class="btn btn-primary">Salvar</button>
+              <button type="submit" class="btn btn-primary">{{ isEditingSale ? 'Atualizar' : 'Salvar' }}</button>
             </div>
           </form>
         </div>
@@ -142,11 +149,11 @@
             <p><strong>ID:</strong> {{ currentSale.id }}</p>
             <p><strong>Cliente:</strong> {{ currentSale.clientName }}</p>
             <p><strong>Descrição:</strong> {{ currentSale.description }}</p>
-            <p><strong>Método de Pagamento:</strong> {{ currentSale.paymentMethod }}</p>
+            <p><strong>Método de Pagamento:</strong> {{ formatPaymentMethod(currentSale.paymentMethod) }}</p>
             <p><strong>Valor:</strong> {{ currency(currentSale.amount) }}</p>
             <p><strong>Data venda:</strong> {{ formatDate(currentSale.createdAt) }}</p>
             <p v-if="currentSale.paymentMethod !== 'TO_RECEIVE'"><strong>Data pagamento:</strong> {{
-              formatDate(currentSale.payedAt) }}</p>
+              formatDateTime(currentSale.payedAt) }}</p>
             <!-- Outros detalhes da venda -->
           </div>
           <div class="modal-footer">
@@ -162,7 +169,8 @@
 
 <script>
 import { apiService } from '../services/apiService';
-import { formatDateHour } from '../utils/formatDate';
+import { formatDate, formatDateHour } from '../utils/formatDate';
+import { formatPaymentMethod } from '../utils/paymentMethod';
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: 'Sales',
@@ -173,11 +181,14 @@ export default {
       clients: [],
       showSaleModal: false,
       showDetailsModal: false,
+      isEditingSale: false,
       currentSale: {
+        id: '',
         productId: '',
         clientId: '',
         quantity: 1,
-        paymentMethod: ''
+        paymentMethod: '',
+        saleDate: ''
       },
       errorMessages: [],
       pagination: {
@@ -198,6 +209,16 @@ export default {
     this.fetchClients();
   },
   methods: {
+    getEmptySale() {
+      return {
+        id: '',
+        productId: '',
+        clientId: '',
+        quantity: 1,
+        paymentMethod: '',
+        saleDate: ''
+      };
+    },
     // Busca a lista de vendas do backend
     async fetchSales(page = 1, perPage = 10) {
       try {
@@ -256,12 +277,8 @@ export default {
     },
     // Abre o modal para adicionar uma nova venda
     addSale() {
-      this.currentSale = {
-        productId: '',
-        clientId: '',
-        quantity: 1,
-        paymentMethod: ''
-      };
+      this.currentSale = this.getEmptySale();
+      this.isEditingSale = false;
       this.errorMessages = [];
       this.showSaleModal = true;
     },
@@ -269,19 +286,9 @@ export default {
     async saveSale() {
       try {
         this.errorMessages = [];
-        // Prepara o payload conforme a estrutura esperada
-        const selectedProduct = this.products.find(
-          product => product.id === this.currentSale.productId
-        );
-        const payload = {
-          productId: this.currentSale.productId,
-          clientId: this.currentSale.clientId,
-          price: parseFloat(selectedProduct.price),
-          quantity: this.currentSale.quantity,
-          paymentMethod: this.currentSale.paymentMethod
-        };
-
-        const response = await apiService.post('/sales', payload);
+        const response = this.isEditingSale
+          ? await this.updateSale()
+          : await this.createSale();
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message) {
@@ -304,6 +311,16 @@ export default {
     viewSale(sale) {
       this.currentSale = { ...sale };
       this.showDetailsModal = true;
+    },
+    editSale(sale) {
+      this.currentSale = {
+        ...this.getEmptySale(),
+        ...sale,
+        saleDate: this.toInputDate(sale.createdAt)
+      };
+      this.isEditingSale = true;
+      this.errorMessages = [];
+      this.showSaleModal = true;
     },
     // Deleta uma venda
     async deleteSale(id) {
@@ -330,15 +347,52 @@ export default {
     },
     closeSaleModal() {
       this.showSaleModal = false;
+      this.isEditingSale = false;
+      this.currentSale = this.getEmptySale();
     },
     closeDetailsModal() {
       this.showDetailsModal = false;
     },
     formatDate(dateString) {
+      return formatDate(dateString)
+    },
+    formatDateTime(dateString) {
+      if (!dateString) return '';
       return formatDateHour(dateString)
+    },
+    formatPaymentMethod(paymentMethod) {
+      return formatPaymentMethod(paymentMethod);
     },
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
+    },
+    toInputDate(dateString) {
+      if (!dateString) return '';
+      return new Date(dateString).toISOString().slice(0, 10);
+    },
+    async createSale() {
+      const selectedProduct = this.products.find(
+        product => product.id === this.currentSale.productId
+      );
+      const payload = {
+        productId: this.currentSale.productId,
+        clientId: this.currentSale.clientId,
+        price: parseFloat(selectedProduct.price),
+        quantity: Number(this.currentSale.quantity),
+        paymentMethod: this.currentSale.paymentMethod,
+        ...(this.currentSale.saleDate ? { saleDate: this.currentSale.saleDate } : {})
+      };
+
+      return apiService.post('/sales', payload);
+    },
+    async updateSale() {
+      const payload = {
+        productId: this.currentSale.productId,
+        quantity: Number(this.currentSale.quantity),
+        saleDate: this.currentSale.saleDate
+      };
+
+      return apiService.put(`/sales/${this.currentSale.id}`, payload);
     },
     goToPage(page) {
       if (page < 1 || page > this.totalPages) {

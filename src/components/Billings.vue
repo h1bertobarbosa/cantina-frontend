@@ -38,7 +38,7 @@
             <td>{{ billing.clientName }}</td>
             <td>{{ billing.description }}</td>
             <td>{{ currency(billing.amount) }}</td>
-            <td>{{ billing.paymentMethod }}</td>
+            <td>{{ formatPaymentMethod(billing.paymentMethod) }}</td>
             <td>{{ formatDate(billing.payedAt) }}</td>
             <td class="text-center">
               <button class="btn btn-info btn-sm" @click="viewBilling(billing.id)">
@@ -91,7 +91,7 @@
             <p><strong>Descrição:</strong> {{ currentBilling.description }}</p>
             <p><strong>Valor:</strong> {{ currency(currentBilling.amount) }}</p>
             <p><strong>Valor Pago:</strong> {{ currency(currentBilling.amountPayed) }}</p>
-            <p><strong>Método de Pagamento:</strong> {{ currentBilling.paymentMethod }}</p>
+            <p><strong>Método de Pagamento:</strong> {{ formatPaymentMethod(currentBilling.paymentMethod) }}</p>
             <p><strong>Pago em:</strong> {{ formatDate(currentBilling.payedAt) }}</p>
             <p><strong>Criado em:</strong> {{ formatDate(currentBilling.createdAt) }}</p>
             <!-- Outros detalhes da fatura -->
@@ -188,7 +188,7 @@
                   <td>{{ item.clientName }}</td>
                   <td>{{ item.description }}</td>
                   <td>{{ formatAmount(item.amount, item.type) }}</td>
-                  <td>{{ item.paymentMethod }}</td>
+                  <td>{{ formatPaymentMethod(item.paymentMethod) }}</td>
                   <td>{{ formatDate(item.createdAt) }}</td>
                 </tr>
               </tbody>
@@ -209,6 +209,7 @@
 <script>
 import { apiService } from '../services/apiService';
 import { formatDateHour } from '../utils/formatDate';
+import { formatPaymentMethod } from '../utils/paymentMethod';
 import CurrencyInput from './CurrencyInput'
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
@@ -384,12 +385,15 @@ export default {
     currency(value) {
       return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
     },
+    formatPaymentMethod(paymentMethod) {
+      return formatPaymentMethod(paymentMethod);
+    },
     formatAmount(amount, type) {
       let adjustedAmount = parseFloat(amount);
       if (type === 'CREDIT') {
         adjustedAmount = -Math.abs(adjustedAmount);
       }
-      return this.$options.filters.currency(adjustedAmount);
+      return this.currency(adjustedAmount);
     },
     onClientChange() {
       this.pagination.page = 1; // Reseta para a primeira página
