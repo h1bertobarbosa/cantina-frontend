@@ -1,8 +1,11 @@
 <!-- src/components/GlobalLoading.vue -->
 <template>
-  <div v-if="isLoading" class="global-loading">
+  <div
+    v-if="isLoading"
+    class="global-loading"
+  >
     <!-- Indicador de carregamento -->
-    <div class="spinner"></div>
+    <div class="spinner" />
   </div>
 </template>
 

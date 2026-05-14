@@ -1,17 +1,20 @@
 <template>
   <div id="app">
     <GlobalLoading />
+    <Toast position="top-right" />
     <RouterView />
   </div>
 </template>
 
 <script>
 import GlobalLoading from './components/GlobalLoading.vue';
+import Toast from 'primevue/toast';
 
 export default {
   name: 'App',
   components: {
     GlobalLoading,
+    Toast,
   },
 };
 </script>

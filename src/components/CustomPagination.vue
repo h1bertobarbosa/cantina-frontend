@@ -3,19 +3,14 @@
 :length="totalPages" :total-visible="totalVisibleComputed" rounded="circle"
         active-color="primary"
 density="comfortable" show-first-last-page :disabled="totalPages <= 1"
-        @update:modelValue="onPageChange"
-:prev-icon="mdiChevronLeft" :next-icon="mdiChevronRight"
-        :first-icon="mdiPageFirst"
-:last-icon="mdiPageLast">
+        @update:modelValue="onPageChange">
   </v-pagination>
 </template>
 
 <script setup>
 /* eslint-disable */
 import { computed } from 'vue';
-import { useDisplay } from 'vuetify';
-// Importar ícones se não estiverem globalmente disponíveis
-import { mdiChevronLeft, mdiChevronRight, mdiPageFirst, mdiPageLast } from '@mdi/js';
+import { useDisplay } from '../composables/useDisplay';
 
 // --- Props ---
 const props = defineProps({

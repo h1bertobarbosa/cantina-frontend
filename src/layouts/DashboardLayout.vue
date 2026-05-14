@@ -1,131 +1,464 @@
 <template>
-  <v-app>
-    <!-- Navigation Drawer (Sidebar) -->
-    <v-navigation-drawer v-model="drawer" app color="grey-lighten-4" :permanent="$vuetify.display.mdAndUp"
-      :temporary="$vuetify.display.smAndDown">
-      <v-list density="compact" nav>
-        <!-- Itens de Navegação -->
-        <v-list-item prepend-icon="mdi-view-dashboard" title="Home" value="home" to="/" exact></v-list-item>
-        <v-divider></v-divider>
-        <v-list-subheader>Gerenciar</v-list-subheader>
-        <v-list-item prepend-icon="mdi-package-variant-closed" title="Produtos" value="products"
-          to="/dashboard/products"></v-list-item>
-        <v-list-item prepend-icon="mdi-account-group" title="Clientes" value="clients"
-          to="/dashboard/clients"></v-list-item>
-        <v-list-item prepend-icon="mdi-cart" title="Vendas" value="sales" to="/dashboard/sales"></v-list-item>
-        <v-list-item prepend-icon="mdi-file-document" title="Faturas" value="billings"
-          to="/dashboard/billings"></v-list-item>
-        <v-list-item prepend-icon="mdi-account-cog" title="Usuários" value="users" to="/dashboard/users"></v-list-item>
-        <v-list-item prepend-icon="mdi-history" title="Histórico de Lançamentos" to="/charge-history"
-          exact></v-list-item>
-      </v-list>
-    </v-navigation-drawer>
+  <div class="dashboard-shell">
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand__badge">
+          CN
+        </div>
+        <div>
+          <p class="sidebar-brand__eyebrow">
+            Plataforma Cantina
+          </p>
+          <h1 class="sidebar-brand__title">
+            Painel administrativo
+          </h1>
+        </div>
+      </div>
 
-    <!-- App Bar (Navbar) -->
-    <v-app-bar app color="primary" dark density="compact">
-      <!-- Ícone para Toggler o Drawer em Telas Menores -->
-      <v-app-bar-nav-icon @click="drawer = !drawer" class="d-md-none"></v-app-bar-nav-icon>
+      <nav class="sidebar-nav">
+        <button
+          v-for="item in navigationItems"
+          :key="item.to"
+          class="sidebar-nav__item"
+          :class="{ 'sidebar-nav__item--active': isRouteActive(item.to) }"
+          type="button"
+          @click="navigateTo(item.to)"
+        >
+          <i
+            class="pi"
+            :class="item.icon"
+          />
+          <span>{{ item.label }}</span>
+        </button>
+      </nav>
 
-      <v-app-bar-title>Admin</v-app-bar-title>
+      <div class="sidebar-user">
+        <Avatar
+          :label="userInitials"
+          shape="circle"
+          class="sidebar-user__avatar"
+        />
+        <div>
+          <p class="sidebar-user__label">
+            Conta ativa
+          </p>
+          <strong>{{ userName }}</strong>
+        </div>
+      </div>
+    </aside>
 
-      <v-spacer></v-spacer>
+    <Drawer
+      v-model:visible="mobileDrawerVisible"
+      position="left"
+      class="dashboard-drawer"
+    >
+      <template #header>
+        <div class="drawer-header">
+          <div class="sidebar-brand__badge">
+            CN
+          </div>
+          <div>
+            <p class="sidebar-brand__eyebrow">
+              Plataforma Cantina
+            </p>
+            <strong class="drawer-header__title">Painel administrativo</strong>
+          </div>
+        </div>
+      </template>
 
-      <!-- Informações do Usuário e Logout -->
-      <span class="mr-3 d-none d-sm-inline">Olá, {{ userName }}</span>
-      <v-btn icon @click="logout">
-        <v-tooltip activator="parent" location="bottom">Sair</v-tooltip>
-        <v-icon>mdi-logout</v-icon>
-      </v-btn>
-    </v-app-bar>
+      <nav class="sidebar-nav sidebar-nav--mobile">
+        <button
+          v-for="item in navigationItems"
+          :key="`${item.to}-mobile`"
+          class="sidebar-nav__item"
+          :class="{ 'sidebar-nav__item--active': isRouteActive(item.to) }"
+          type="button"
+          @click="navigateTo(item.to)"
+        >
+          <i
+            class="pi"
+            :class="item.icon"
+          />
+          <span>{{ item.label }}</span>
+        </button>
+      </nav>
+    </Drawer>
 
-    <!-- Conteúdo Principal -->
-    <v-main>
-      <v-container fluid>
-        <router-view></router-view>
-      </v-container>
-    </v-main>
+    <main class="dashboard-main">
+      <Toolbar class="dashboard-toolbar">
+        <template #start>
+          <div class="toolbar-context">
+            <Button
+              icon="pi pi-bars"
+              text
+              rounded
+              class="toolbar-menu-button"
+              @click="mobileDrawerVisible = true"
+            />
 
-    <!-- Footer -->
-    <v-footer app class="pa-2" style="height: auto;">
-      <v-spacer></v-spacer>
-      <span class="text-caption">©{{ new Date().getFullYear() }} Consolidated Technology</span>
-    </v-footer>
-  </v-app>
+            <div>
+              <p class="toolbar-context__eyebrow">
+                {{ currentContext.eyebrow }}
+              </p>
+              <h2 class="toolbar-context__title">
+                {{ currentContext.title }}
+              </h2>
+            </div>
+          </div>
+        </template>
+
+        <template #end>
+          <div class="toolbar-user">
+            <div class="toolbar-user__text">
+              <span class="toolbar-user__greeting">Ola, {{ userName }}</span>
+              <small>{{ currentContext.description }}</small>
+            </div>
+
+            <Avatar
+              :label="userInitials"
+              shape="circle"
+              class="toolbar-user__avatar"
+            />
+
+            <Button
+              label="Sair"
+              icon="pi pi-sign-out"
+              severity="secondary"
+              variant="outlined"
+              @click="logout"
+            />
+          </div>
+        </template>
+      </Toolbar>
+
+      <div class="dashboard-content">
+        <router-view />
+      </div>
+
+      <footer class="dashboard-footer">
+        <span>©{{ new Date().getFullYear() }} Consolidated Technology</span>
+      </footer>
+    </main>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { jwtDecode } from "jwt-decode";
-import { useDisplay } from 'vuetify'; // Importar useDisplay
+import { computed, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { jwtDecode } from 'jwt-decode';
+import Avatar from 'primevue/avatar';
+import Button from 'primevue/button';
+import Drawer from 'primevue/drawer';
+import Toolbar from 'primevue/toolbar';
 
-// Acesso ao router
+const route = useRoute();
 const router = useRouter();
 
-// Controle do estado do navigation drawer (sidebar)
-const drawer = ref(true); // Começa aberto por padrão em desktop
+const mobileDrawerVisible = ref(false);
 
-// Nome do usuário
-const userName = ref('Usuário');
+const navigationItems = [
+  { label: 'Dashboard', to: '/dashboard', icon: 'pi-home' },
+  { label: 'Produtos', to: '/dashboard/products', icon: 'pi-box' },
+  { label: 'Clientes', to: '/dashboard/clients', icon: 'pi-users' },
+  { label: 'Vendas', to: '/dashboard/sales', icon: 'pi-shopping-cart' },
+  { label: 'Faturas', to: '/dashboard/billings', icon: 'pi-file' },
+  { label: 'Usuarios', to: '/dashboard/users', icon: 'pi-id-card' },
+  { label: 'Historico', to: '/charge-history', icon: 'pi-history' },
+];
 
-// Acesso às propriedades de display do Vuetify
-const { mdAndUp } = useDisplay();
+const pageContextMap = [
+  {
+    match: (path) => path === '/dashboard' || path === '/',
+    eyebrow: 'Visao geral',
+    title: 'Dashboard',
+    description: 'Acompanhe os indicadores centrais da operacao.',
+  },
+  {
+    match: (path) => path.startsWith('/dashboard/clients'),
+    eyebrow: 'Relacionamento',
+    title: 'Clientes',
+    description: 'Gerencie cadastros, busca, edicao e exclusao de clientes.',
+  },
+  {
+    match: (path) => path.startsWith('/dashboard/products'),
+    eyebrow: 'Catalogo',
+    title: 'Produtos',
+    description: 'Organize o catalogo da cantina.',
+  },
+  {
+    match: (path) => path.startsWith('/dashboard/sales'),
+    eyebrow: 'Movimento',
+    title: 'Vendas',
+    description: 'Consulte as vendas registradas.',
+  },
+  {
+    match: (path) => path.startsWith('/dashboard/billings'),
+    eyebrow: 'Financeiro',
+    title: 'Faturas',
+    description: 'Acompanhe cobrancas e recebimentos.',
+  },
+  {
+    match: (path) => path.startsWith('/dashboard/users'),
+    eyebrow: 'Acesso',
+    title: 'Usuarios',
+    description: 'Gerencie usuarios da conta.',
+  },
+  {
+    match: (path) => path.startsWith('/charge-history'),
+    eyebrow: 'Auditoria',
+    title: 'Historico de lancamentos',
+    description: 'Consulte os registros recentes da conta.',
+  },
+];
 
-// Função para obter o nome do usuário do token JWT
+const currentContext = computed(() => {
+  const currentPath = route.path;
+  return pageContextMap.find((item) => item.match(currentPath)) || pageContextMap[0];
+});
+
 const getUserName = () => {
   const accessToken = localStorage.getItem('accessToken');
+
   if (!accessToken) {
     router.push('/signin');
-    return;
+    return 'Usuario';
   }
+
   try {
     const decodedToken = jwtDecode(accessToken);
-    // Verifica se o token decodificado e o campo 'name' existem
-    if (decodedToken && decodedToken.name) {
-      userName.value = decodedToken.name;
-    } else {
-      console.warn("Token JWT decodificado não contém o campo 'name'. Usando nome padrão.");
-      userName.value = 'Usuário'; // Mantém o padrão se 'name' não existir
-    }
+    return decodedToken?.name || 'Usuario';
   } catch (error) {
     console.error('Erro ao decodificar o token JWT:', error);
-    localStorage.removeItem('accessToken'); // Limpa token inválido
+    localStorage.removeItem('accessToken');
     router.push('/signin');
+    return 'Usuario';
   }
 };
 
-// Função de logout
+const userName = computed(() => getUserName());
+const userInitials = computed(() => (
+  userName.value
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'U'
+));
+
+const isRouteActive = (targetPath) => {
+  if (targetPath === '/dashboard') {
+    return route.path === '/dashboard' || route.path === '/';
+  }
+
+  return route.path.startsWith(targetPath);
+};
+
+const navigateTo = (targetPath) => {
+  mobileDrawerVisible.value = false;
+  router.push(targetPath);
+};
+
 const logout = () => {
   localStorage.removeItem('accessToken');
   router.push('/signin');
 };
-
-// Executa ao montar o componente
-onMounted(() => {
-  getUserName();
-  // Ajusta o estado inicial do drawer com base no tamanho da tela
-  // Se for menor que 'md', começa fechado.
-  if (!mdAndUp.value) {
-    drawer.value = false;
-  }
-});
-
 </script>
 
 <style scoped>
-/* Estilos específicos do componente, se necessário. Vuetify cuida da maioria. */
-.v-list-item--active {
-  /* background-color: rgba(var(--v-theme-primary), 0.1); /* Exemplo de destaque */
-  color: rgb(var(--v-theme-primary));
+.dashboard-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  background: transparent;
 }
 
-.v-list-item__prepend>.v-icon {
-  margin-inline-end: 16px;
-  /* Ajuste do espaçamento do ícone padrão do Vuetify 3 */
+.dashboard-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  height: 100vh;
+  padding: 28px 22px;
+  background: linear-gradient(180deg, #102a43 0%, #183a66 100%);
+  color: #fff;
 }
 
-/* Ajuste fino para espaçamento no footer */
-.v-footer {
-  font-size: 0.8rem;
+.sidebar-brand {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.sidebar-brand__badge,
+.toolbar-user__avatar,
+.sidebar-user__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 700;
+}
+
+.sidebar-brand__eyebrow,
+.toolbar-context__eyebrow,
+.sidebar-user__label {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.sidebar-brand__title,
+.drawer-header__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.sidebar-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-nav__item:hover,
+.sidebar-nav__item--active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transform: translateX(2px);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 22px;
+}
+
+.dashboard-toolbar {
+  margin-bottom: 22px;
+  border: 1px solid var(--app-border);
+  box-shadow: var(--app-shadow);
+}
+
+.toolbar-context,
+.toolbar-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toolbar-menu-button {
+  display: none;
+}
+
+.toolbar-context__title {
+  margin: 0;
+  color: var(--app-text);
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.toolbar-user {
+  justify-content: flex-end;
+}
+
+.toolbar-user__text {
+  display: grid;
+  text-align: right;
+  color: var(--app-text-muted);
+}
+
+.toolbar-user__greeting {
+  color: var(--app-text);
+  font-weight: 600;
+}
+
+.dashboard-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.dashboard-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 18px 6px 8px;
+  color: var(--app-text-muted);
+  font-size: 0.84rem;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 959px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-sidebar {
+    display: none;
+  }
+
+  .dashboard-main {
+    padding: 14px;
+  }
+
+  .dashboard-toolbar {
+    margin-bottom: 16px;
+  }
+
+  .toolbar-menu-button {
+    display: inline-flex;
+  }
+
+  .toolbar-context,
+  .toolbar-user {
+    width: 100%;
+  }
+
+  .toolbar-user {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .toolbar-user__text {
+    order: 3;
+    width: 100%;
+    text-align: left;
+  }
 }
 </style>

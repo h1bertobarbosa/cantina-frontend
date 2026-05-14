@@ -16,7 +16,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       {
-        path: "/",
+        path: "",
         component: () => import("../components/DashBoard.vue"),
       },
       {

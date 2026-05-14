@@ -11,7 +11,7 @@
     clearable
     no-data-text="Nenhum cliente encontrado"
     return-object="false"
-    @update:modelValue="handleSelection"
+    @update:model-value="handleSelection"
   >
     <!-- Opcional: Customizar como cada item aparece na lista -->
     <!--
@@ -30,7 +30,6 @@
         <span>{{ item.raw.name }}</span>
     </template>
     -->
-
   </v-autocomplete>
 </template>
 
@@ -43,13 +42,13 @@ const props = defineProps({
   clients: {
     type: Array,
     required: true,
-    default: () => [] // Boa prática fornecer um valor padrão
+    default: () => [], // Boa prática fornecer um valor padrão
   },
   // Opcional: Se você quiser pré-selecionar um cliente pelo ID
   initialClientId: {
     type: [String, Number, null],
-    default: null
-  }
+    default: null,
+  },
 });
 
 // --- Emits ---
@@ -67,7 +66,7 @@ const selectedClient = ref(props.initialClientId);
 const handleSelection = (value) => {
   // O v-autocomplete com return-object="false" já nos dá o ID (item-value)
   // Emitimos o evento 'selected' com o ID (ou null se limpo)
-  emit('selected', value?.id);
+  emit('selected', value ?? null);
 };
 
 // Observador opcional: Se a prop initialClientId mudar externamente,
