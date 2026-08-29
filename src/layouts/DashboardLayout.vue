@@ -155,8 +155,9 @@ const route = useRoute();
 const router = useRouter();
 
 const mobileDrawerVisible = ref(false);
+const auditAllowedEmail = 'humberto.obarbosa@gmail.com';
 
-const navigationItems = [
+const baseNavigationItems = [
   { label: 'Dashboard', to: '/dashboard', icon: 'pi-home' },
   { label: 'Produtos', to: '/dashboard/products', icon: 'pi-box' },
   { label: 'Clientes', to: '/dashboard/clients', icon: 'pi-users' },
@@ -165,6 +166,35 @@ const navigationItems = [
   { label: 'Usuarios', to: '/dashboard/users', icon: 'pi-id-card' },
   { label: 'Historico', to: '/charge-history', icon: 'pi-history' },
 ];
+
+const getDecodedUser = () => {
+  const accessToken = localStorage.getItem('accessToken');
+
+  if (!accessToken) {
+    router.push('/signin');
+    return null;
+  }
+
+  try {
+    return jwtDecode(accessToken);
+  } catch (error) {
+    console.error('Erro ao decodificar o token JWT:', error);
+    localStorage.removeItem('accessToken');
+    router.push('/signin');
+    return null;
+  }
+};
+
+const currentUser = computed(() => getDecodedUser());
+const canViewAudit = computed(() => currentUser.value?.email === auditAllowedEmail);
+const navigationItems = computed(() => (
+  canViewAudit.value
+    ? [
+      ...baseNavigationItems,
+      { label: 'Auditoria', to: '/dashboard/audit', icon: 'pi-shield' },
+    ]
+    : baseNavigationItems
+));
 
 const pageContextMap = [
   {
@@ -204,6 +234,12 @@ const pageContextMap = [
     description: 'Gerencie usuarios da conta.',
   },
   {
+    match: (path) => path.startsWith('/dashboard/audit'),
+    eyebrow: 'Auditoria',
+    title: 'Logs do sistema',
+    description: 'Consulte eventos operacionais de todas as contas.',
+  },
+  {
     match: (path) => path.startsWith('/charge-history'),
     eyebrow: 'Auditoria',
     title: 'Historico de lancamentos',
@@ -217,22 +253,7 @@ const currentContext = computed(() => {
 });
 
 const getUserName = () => {
-  const accessToken = localStorage.getItem('accessToken');
-
-  if (!accessToken) {
-    router.push('/signin');
-    return 'Usuario';
-  }
-
-  try {
-    const decodedToken = jwtDecode(accessToken);
-    return decodedToken?.name || 'Usuario';
-  } catch (error) {
-    console.error('Erro ao decodificar o token JWT:', error);
-    localStorage.removeItem('accessToken');
-    router.push('/signin');
-    return 'Usuario';
-  }
+  return currentUser.value?.name || 'Usuario';
 };
 
 const userName = computed(() => getUserName());

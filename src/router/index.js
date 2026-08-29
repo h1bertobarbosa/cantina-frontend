@@ -1,4 +1,22 @@
 import { createWebHistory, createRouter } from "vue-router";
+import { jwtDecode } from "jwt-decode";
+
+const auditAllowedEmail = "humberto.obarbosa@gmail.com";
+
+const getTokenUser = () => {
+  const accessToken = localStorage.getItem("accessToken");
+
+  if (!accessToken) {
+    return null;
+  }
+
+  try {
+    return jwtDecode(accessToken);
+  } catch (error) {
+    localStorage.removeItem("accessToken");
+    return null;
+  }
+};
 
 const routes = [
   {
@@ -40,6 +58,11 @@ const routes = [
         component: () => import("../components/UsersPage.vue"),
       },
       {
+        path: "audit",
+        component: () => import("../components/AuditLogs.vue"),
+        meta: { requiresAudit: true },
+      },
+      {
         path: "/charge-history",
         name: "ChargeHistory",
         component: () => import("../components/ChargeHistory.vue"),
@@ -55,11 +78,15 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const loggedIn = localStorage.getItem("accessToken");
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+  const requiresAudit = to.matched.some((record) => record.meta.requiresAudit);
+  const user = requiresAuth ? getTokenUser() : null;
 
-  if (to.matched.some((record) => record.meta.requiresAuth) && !loggedIn) {
+  if (requiresAuth && !user) {
     // Se a rota requer autenticação e o usuário não está logado
     next("/signin");
+  } else if (requiresAudit && user?.email !== auditAllowedEmail) {
+    next("/dashboard");
   } else {
     next();
   }
