@@ -601,7 +601,7 @@
 
             <Column header="Valor">
               <template #body="{ data }">
-                {{ currency(data.amount) }}
+                {{ currency(getReceiptItemAmount(data)) }}
               </template>
             </Column>
           </DataTable>
@@ -976,10 +976,23 @@ function getTodayString() {
 
 const firstRecordIndex = computed(() => (pagination.page - 1) * pagination.perPage);
 
+const normalizeText = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
+
+const isCreditReceiptItem = (item) => (
+  item?.type === 'CREDIT'
+  || normalizeText(item?.description).includes('credito')
+);
+
+const getReceiptItemAmount = (item) => {
+  const amount = Number(item?.amount) || 0;
+  return isCreditReceiptItem(item) ? -Math.abs(amount) : amount;
+};
+
 const receiptTotal = computed(() => (receiptData.value.items || []).reduce((sum, item) => {
-  const isCredit = String(item.description || '').toLowerCase().includes('credito');
-  const amount = Number(item.amount) || 0;
-  return isCredit ? sum - amount : sum + amount;
+  return sum + getReceiptItemAmount(item);
 }, 0));
 
 const normalizeMessages = (errorData, fallbackMessage = 'Ocorreu um erro.') => {
