@@ -1531,15 +1531,7 @@ function getTodayString() {
 
 const firstRecordIndex = computed(() => (pagination.page - 1) * pagination.perPage);
 
-const normalizeText = (value) => String(value || '')
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase();
-
-const isCreditReceiptItem = (item) => (
-  item?.type === 'CREDIT'
-  || normalizeText(item?.description).includes('credito')
-);
+const isCreditReceiptItem = (item) => item?.type === 'CREDIT';
 
 const getReceiptItemAmount = (item) => {
   const amount = Number(item?.amount) || 0;
