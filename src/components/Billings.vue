@@ -331,7 +331,7 @@
               :severity="getBillingStatusMeta(managedLedger.billing).severity"
             />
           </div>
-          <div><span>Saldo aberto</span><strong>{{ currency(managedLedger.openAmount) }}</strong></div>
+          <div><span>Saldo aberto</span><strong>{{ currency(Math.max(0, managedLedger.openAmount)) }}</strong></div>
           <div><span>Valor pago</span><strong>{{ currency(managedLedger.billing.amountPayed) }}</strong></div>
         </div>
         <Message
@@ -341,7 +341,7 @@
           Credito do cliente: {{ currency(managedLedger.creditBalance) }}
         </Message>
         <Message
-          v-if="Math.abs(managedLedger.openAmount - Math.max(0, managedLedger.ledgerTotal)) > 0.009"
+          v-if="Math.abs(Math.max(0, managedLedger.openAmount) - Math.max(0, managedLedger.ledgerTotal)) > 0.009"
           severity="warn"
         >
           Saldo registrado: {{ currency(managedLedger.openAmount) }}. Total do extrato: {{ currency(managedLedger.ledgerTotal) }}.
@@ -1337,7 +1337,7 @@ const managedSaleItems = ref([]);
 const addManagedSaleItem = () => managedSaleItems.value.push({ key: ++saleItemKey, productId: null, quantity: 1, price: null });
 const setManagedSalePrice = (item) => { item.price = Number(products.value.find(product => product.id === item.productId)?.price || 0); };
 const managedSaleTotal = computed(() => managedSaleItems.value.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * Number(item.quantity || 0) * 100), 0) / 100);
-const isManagedBillingMutable = computed(() => !managementStale.value && ['OPEN', 'PARTIAL'].includes(managedLedger.value?.billing.status));
+const isManagedBillingMutable = computed(() => !managementStale.value && ['OPEN', 'PARTIAL', 'CREDIT_BALANCE'].includes(managedLedger.value?.billing.status));
 const showCreateBillingDialog = ref(false);
 const pendingManagedBilling = ref(null);
 const openPendingManagedBilling = () => {
