@@ -117,7 +117,6 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { format } from 'date-fns';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import InputText from 'primevue/inputtext';
@@ -213,11 +212,11 @@ const buildDateParams = () => {
   const params = new URLSearchParams();
 
   if (startDate.value) {
-    params.set('startDate', format(new Date(startDate.value), 'yyyy-MM-dd'));
+    params.set('startDate', startDate.value);
   }
 
   if (endDate.value) {
-    params.set('endDate', format(new Date(endDate.value), 'yyyy-MM-dd'));
+    params.set('endDate', endDate.value);
   }
 
   return params.toString();
@@ -274,7 +273,7 @@ const updateData = async () => {
   errorMessages.value = [];
   loading.value = true;
 
-  if (startDate.value && endDate.value && new Date(startDate.value) > new Date(endDate.value)) {
+  if (startDate.value && endDate.value && startDate.value > endDate.value) {
     errorMessages.value.push('A data inicial nao pode ser posterior a data final.');
     loading.value = false;
     return;

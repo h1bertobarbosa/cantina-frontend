@@ -20,6 +20,10 @@ const getTokenUser = () => {
 
 const routes = [
   {
+    path: "/",
+    redirect: "/signin",
+  },
+  {
     path: "/signup",
     component: () => import("../components/SignUp.vue"),
   },
