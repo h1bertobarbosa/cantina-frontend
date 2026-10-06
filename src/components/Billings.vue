@@ -14,11 +14,18 @@
         </p>
       </div>
 
-      <Button
-        label="Historico de cobranca"
-        icon="pi pi-plus"
-        @click="openManualBillingDialog"
-      />
+      <div class="management-header-actions">
+        <Button
+          label="Nova fatura"
+          icon="pi pi-plus"
+          @click="openCreateBillingDialog"
+        />
+        <Button
+          label="Historico de cobranca"
+          icon="pi pi-plus"
+          @click="openManualBillingDialog"
+        />
+      </div>
     </header>
 
     <Message
@@ -284,6 +291,8 @@
       v-model:visible="showManagementDialog"
       modal
       header="Gerenciar fatura"
+      :closable="!savingManagement"
+      :close-on-escape="!savingManagement"
       :style="{ width: '1000px', maxWidth: '96vw' }"
     >
       <Message
@@ -329,6 +338,161 @@
         >
           Saldo registrado: {{ currency(managedLedger.openAmount) }}. Total do extrato: {{ currency(managedLedger.ledgerTotal) }}.
         </Message>
+        <form
+          v-if="isManagedBillingMutable"
+          class="management-form"
+          @submit.prevent="submitManagementAction"
+        >
+          <SelectButton
+            v-model="managementAction"
+            :options="managementActions"
+            option-label="label"
+            option-value="value"
+            :allow-empty="false"
+            :disabled="savingManagement"
+            aria-label="Lancamento"
+          />
+          <div
+            v-if="managementAction !== 'sales'"
+            class="management-fields"
+          >
+            <div class="field-block">
+              <label for="management-amount">Valor</label><InputNumber
+                v-model="managementForm.amount"
+                input-id="management-amount"
+                mode="currency"
+                currency="BRL"
+                locale="pt-BR"
+                :min="0.01"
+                :max-fraction-digits="2"
+                :disabled="savingManagement"
+              />
+            </div>
+            <div
+              v-if="managementAction === 'credits'"
+              class="field-block"
+            >
+              <label for="management-method">Metodo de pagamento</label><Select
+                id="management-method"
+                v-model="managementForm.paymentMethod"
+                :options="paymentMethodDialogOptions"
+                option-label="label"
+                option-value="value"
+                :disabled="savingManagement"
+              />
+            </div>
+            <div class="field-block">
+              <label for="management-description">Descricao{{ managementAction === 'credits' ? ' (opcional)' : '' }}</label><InputText
+                id="management-description"
+                v-model="managementForm.description"
+                maxlength="150"
+                :disabled="savingManagement"
+              />
+            </div>
+            <div
+              v-if="managementAction === 'debits'"
+              class="field-block"
+            >
+              <label for="management-date">Data da compra</label><InputText
+                id="management-date"
+                v-model="managementForm.purchaseDate"
+                type="date"
+                :disabled="savingManagement"
+              />
+            </div>
+          </div>
+          <template v-else>
+            <Message
+              v-if="productErrors.length"
+              severity="error"
+            >
+              {{ productErrors.join(' ') }}
+            </Message>
+            <div
+              v-for="(item, index) in managedSaleItems"
+              :key="item.key"
+              class="management-sale-row"
+            >
+              <div class="field-block">
+                <label :for="`sale-product-${item.key}`">Produto</label><Select
+                  :id="`sale-product-${item.key}`"
+                  v-model="item.productId"
+                  :options="products"
+                  option-label="name"
+                  option-value="id"
+                  filter
+                  :loading="loadingProducts"
+                  :disabled="savingManagement"
+                  @update:model-value="setManagedSalePrice(item)"
+                />
+              </div>
+              <div class="field-block">
+                <label :for="`sale-quantity-${item.key}`">Quantidade</label><InputNumber
+                  v-model="item.quantity"
+                  :input-id="`sale-quantity-${item.key}`"
+                  :min="1"
+                  :max-fraction-digits="0"
+                  :disabled="savingManagement"
+                />
+              </div>
+              <div class="field-block">
+                <label :for="`sale-price-${item.key}`">Preco</label><InputNumber
+                  v-model="item.price"
+                  :input-id="`sale-price-${item.key}`"
+                  mode="currency"
+                  currency="BRL"
+                  locale="pt-BR"
+                  :min="0.01"
+                  :max-fraction-digits="2"
+                  :disabled="savingManagement"
+                />
+              </div>
+              <Button
+                type="button"
+                icon="pi pi-trash"
+                severity="danger"
+                text
+                :disabled="savingManagement || managedSaleItems.length === 1"
+                :aria-label="`Remover produto ${index + 1}`"
+                title="Remover produto"
+                @click="managedSaleItems.splice(index, 1)"
+              />
+            </div>
+            <div class="management-sale-footer">
+              <Button
+                type="button"
+                label="Adicionar produto"
+                icon="pi pi-plus"
+                text
+                :disabled="savingManagement"
+                @click="addManagedSaleItem"
+              /><strong>Total: {{ currency(managedSaleTotal) }}</strong>
+            </div>
+            <div class="field-block">
+              <label for="managed-sale-date">Data da compra</label><InputText
+                id="managed-sale-date"
+                v-model="managementForm.purchaseDate"
+                type="date"
+                :disabled="savingManagement"
+              />
+            </div>
+          </template>
+          <Message
+            v-if="managementFormErrors.length"
+            severity="error"
+          >
+            {{ managementFormErrors.join(' ') }}
+          </Message>
+          <div class="dialog-actions">
+            <Button
+              type="submit"
+              :label="managementAction === 'credits' ? 'Lancar credito' : managementAction === 'debits' ? 'Lancar debito' : 'Lancar venda'"
+              icon="pi pi-check"
+              :loading="savingManagement"
+              :disabled="savingManagement || loadingManagement"
+            />
+          </div>
+        </form>
         <DataTable
           :value="managedLedger.items"
           data-key="id"
@@ -377,6 +541,23 @@
               >{{ data.reversalReason }} · {{ data.reversedByUserName }}</small>
             </template>
           </Column>
+          <Column
+            v-if="isManagedBillingMutable"
+            header="Acoes"
+          >
+            <template #body="{ data }">
+              <Button
+                v-if="!data.reversalOfItemId && !data.reversedByItemId"
+                icon="pi pi-undo"
+                text
+                severity="danger"
+                aria-label="Estornar lancamento"
+                title="Estornar lancamento"
+                :disabled="savingManagement"
+                @click="openReversalDialog(data)"
+              />
+            </template>
+          </Column>
         </DataTable>
       </template>
       <template #footer>
@@ -384,9 +565,123 @@
           label="Fechar"
           icon="pi pi-times"
           text
+          :disabled="savingManagement"
           @click="showManagementDialog = false"
         />
       </template>
+    </Dialog>
+
+    <Dialog
+      v-model:visible="showCreateBillingDialog"
+      header="Nova fatura"
+      modal
+      :style="{ width: '560px', maxWidth: '96vw' }"
+      :closable="!savingCreateBilling"
+      :close-on-escape="!savingCreateBilling"
+    >
+      <form
+        class="management-form"
+        @submit.prevent="createManagedBilling"
+      >
+        <div class="field-block">
+          <label for="new-billing-client">Cliente</label><Select
+            id="new-billing-client"
+            v-model="createBillingForm.clientId"
+            :options="clients"
+            option-label="name"
+            option-value="id"
+            filter
+            :disabled="savingCreateBilling"
+          />
+        </div>
+        <div class="field-block">
+          <label for="new-billing-description">Descricao</label><InputText
+            id="new-billing-description"
+            v-model="createBillingForm.description"
+            maxlength="150"
+            :disabled="savingCreateBilling"
+          />
+        </div>
+        <div class="field-block">
+          <label for="new-billing-amount">Debito inicial</label><InputNumber
+            v-model="createBillingForm.amount"
+            input-id="new-billing-amount"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            :min="0"
+            :max-fraction-digits="2"
+            :disabled="savingCreateBilling"
+          />
+        </div>
+        <Message
+          v-if="createBillingErrors.length"
+          severity="error"
+        >
+          {{ createBillingErrors.join(' ') }}
+        </Message>
+        <div class="dialog-actions">
+          <Button
+            label="Cancelar"
+            icon="pi pi-times"
+            text
+            :disabled="savingCreateBilling"
+            @click="showCreateBillingDialog = false"
+          /><Button
+            label="Criar fatura"
+            icon="pi pi-check"
+            type="submit"
+            :loading="savingCreateBilling"
+            :disabled="savingCreateBilling"
+          />
+        </div>
+      </form>
+    </Dialog>
+
+    <Dialog
+      v-model:visible="showReversalDialog"
+      header="Estornar lancamento"
+      modal
+      :style="{ width: '520px', maxWidth: '96vw' }"
+      :closable="!savingManagement"
+      :close-on-escape="!savingManagement"
+    >
+      <form
+        class="management-form"
+        @submit.prevent="reverseManagedItem"
+      >
+        <strong>{{ reversalItem?.description }} · {{ currency(reversalItem?.amount) }}</strong>
+        <div class="field-block">
+          <label for="reversal-reason">Motivo</label><Textarea
+            id="reversal-reason"
+            v-model="reversalReason"
+            rows="3"
+            :disabled="savingManagement"
+          />
+        </div>
+        <Message
+          v-if="reversalErrors.length"
+          severity="error"
+        >
+          {{ reversalErrors.join(' ') }}
+        </Message>
+        <div class="dialog-actions">
+          <Button
+            label="Cancelar"
+            icon="pi pi-times"
+            text
+            :disabled="savingManagement"
+            @click="showReversalDialog = false"
+          /><Button
+            label="Confirmar estorno"
+            icon="pi pi-undo"
+            severity="danger"
+            type="submit"
+            :loading="savingManagement"
+            :disabled="savingManagement"
+          />
+        </div>
+      </form>
     </Dialog>
 
     <Dialog
@@ -975,6 +1270,7 @@ import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
 import Paginator from 'primevue/paginator';
 import Select from 'primevue/select';
+import SelectButton from 'primevue/selectbutton';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { apiService } from '../services/apiService';
@@ -1017,8 +1313,34 @@ const showManagementDialog = ref(false);
 const loadingManagement = ref(false);
 const managementErrors = ref([]);
 const managedLedger = ref(null);
+const savingManagement = ref(false);
+const managementAction = ref('credits');
+const managementActions = [{ label: 'Credito', value: 'credits' }, { label: 'Debito', value: 'debits' }, { label: 'Venda', value: 'sales' }];
+const managementForm = reactive({ amount: null, paymentMethod: 'PIX', description: '', purchaseDate: getTodayString() });
+const managementFormErrors = ref([]);
+const products = ref([]);
+const loadingProducts = ref(false);
+const productErrors = ref([]);
+let saleItemKey = 0;
+const managedSaleItems = ref([]);
+const addManagedSaleItem = () => managedSaleItems.value.push({ key: ++saleItemKey, productId: null, quantity: 1, price: null });
+const setManagedSalePrice = (item) => { item.price = Number(products.value.find(product => product.id === item.productId)?.price || 0); };
+const managedSaleTotal = computed(() => managedSaleItems.value.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * Number(item.quantity || 0) * 100), 0) / 100);
+const isManagedBillingMutable = computed(() => ['OPEN', 'PARTIAL'].includes(managedLedger.value?.billing.status));
+const showCreateBillingDialog = ref(false);
+const savingCreateBilling = ref(false);
+const createBillingForm = reactive({ clientId: null, description: '', amount: 0 });
+const createBillingErrors = ref([]);
+const showReversalDialog = ref(false);
+const reversalItem = ref(null);
+const reversalReason = ref('');
+const reversalErrors = ref([]);
 let managementRequest = 0;
 const openManagementDialog = async (billing) => {
+  managementFormErrors.value = [];
+  Object.assign(managementForm, { amount: null, paymentMethod: 'PIX', description: '', purchaseDate: getTodayString() });
+  managedSaleItems.value = [];
+  addManagedSaleItem();
   showManagementDialog.value = true;
   managedLedger.value = null;
   managementErrors.value = [];
@@ -1035,6 +1357,98 @@ const openManagementDialog = async (billing) => {
     if (request === managementRequest) loadingManagement.value = false;
   }
 };
+
+const refreshManagedBilling = async () => {
+  const id = managedLedger.value.billing.id;
+  const response = await apiService.get(`/billings/${id}/ledger`);
+  const data = await response.json();
+  if (!response.ok) throw data;
+  managedLedger.value = data;
+  await fetchBillings();
+};
+const submitManagementAction = async () => {
+  if (savingManagement.value || !isManagedBillingMutable.value) return;
+  managementFormErrors.value = [];
+  const action = managementAction.value;
+  let payload;
+  if (action === 'sales') {
+    if (!managedSaleItems.value.length || managedSaleItems.value.some(item => !item.productId || !Number.isInteger(item.quantity) || item.quantity < 1 || !(item.price > 0))) {
+      managementFormErrors.value = ['Selecione produto, quantidade inteira e preco maior que zero.']; return;
+    }
+    payload = { items: managedSaleItems.value.map(({ productId, price, quantity }) => ({ productId, price, quantity })), buyDate: managementForm.purchaseDate || undefined };
+  } else {
+    if (!(managementForm.amount > 0)) managementFormErrors.value.push('Informe um valor maior que zero.');
+    if (action === 'credits' && !managementForm.paymentMethod) managementFormErrors.value.push('Selecione o metodo de pagamento.');
+    if (action === 'debits' && !managementForm.description.trim()) managementFormErrors.value.push('Informe a descricao.');
+    if (managementFormErrors.value.length) return;
+    payload = { amount: managementForm.amount, description: managementForm.description.trim() || undefined,
+      ...(action === 'credits' ? { paymentMethod: managementForm.paymentMethod } : { purchaseDate: managementForm.purchaseDate || undefined }) };
+  }
+  savingManagement.value = true;
+  try {
+    const response = await apiService.post(`/billings/${managedLedger.value.billing.id}/${action}`, payload);
+    const data = await response.json();
+    if (!response.ok) throw data;
+    managementForm.amount = null; managementForm.description = '';
+    managedSaleItems.value = []; addManagedSaleItem();
+    await refreshManagedBilling();
+  } catch (error) { managementFormErrors.value = normalizeMessages(error, 'Erro ao lancar operacao.'); }
+  finally { savingManagement.value = false; }
+};
+const openCreateBillingDialog = () => {
+  Object.assign(createBillingForm, { clientId: filters.clientId, description: '', amount: 0 });
+  createBillingErrors.value = [];
+  showCreateBillingDialog.value = true;
+};
+const createManagedBilling = async () => {
+  if (savingCreateBilling.value) return;
+  createBillingErrors.value = [];
+  if (!createBillingForm.clientId) createBillingErrors.value.push('Selecione o cliente.');
+  if (!createBillingForm.description.trim()) createBillingErrors.value.push('Informe a descricao.');
+  if (createBillingForm.amount < 0) createBillingErrors.value.push('Valor inicial nao pode ser negativo.');
+  if (createBillingErrors.value.length) return;
+  savingCreateBilling.value = true;
+  try {
+    const response = await apiService.post('/billings', { ...createBillingForm, description: createBillingForm.description.trim(), amount: createBillingForm.amount || 0 });
+    const data = await response.json();
+    if (response.status === 409 && data.activeBillingId) {
+      showCreateBillingDialog.value = false;
+      await openManagementDialog({ id: data.activeBillingId });
+      return;
+    }
+    if (!response.ok) throw data;
+    showCreateBillingDialog.value = false;
+    await fetchBillings();
+    await openManagementDialog(data);
+  } catch (error) { createBillingErrors.value = normalizeMessages(error, 'Erro ao criar fatura.'); }
+  finally { savingCreateBilling.value = false; }
+};
+const openReversalDialog = (item) => { reversalItem.value = item; reversalReason.value = ''; reversalErrors.value = []; showReversalDialog.value = true; };
+const reverseManagedItem = async () => {
+  if (savingManagement.value || !isManagedBillingMutable.value) return;
+  reversalErrors.value = [];
+  if (!reversalReason.value.trim()) { reversalErrors.value = ['Informe o motivo do estorno.']; return; }
+  savingManagement.value = true;
+  try {
+    const response = await apiService.post(`/billings/${managedLedger.value.billing.id}/items/${reversalItem.value.id}/reversal`, { reason: reversalReason.value.trim() });
+    const data = await response.json();
+    if (!response.ok) throw data;
+    showReversalDialog.value = false;
+    await refreshManagedBilling();
+  } catch (error) { reversalErrors.value = normalizeMessages(error, 'Erro ao estornar lancamento.'); }
+  finally { savingManagement.value = false; }
+};
+watch(managementAction, async (action) => {
+  managementFormErrors.value = [];
+  if (action !== 'sales' || products.value.length) return;
+  loadingProducts.value = true; productErrors.value = [];
+  try {
+    const response = await apiService.get('/products?perPage=500&orderBy=name&orderDir=asc');
+    const data = await response.json(); if (!response.ok) throw data;
+    products.value = data.data || [];
+  } catch (error) { productErrors.value = normalizeMessages(error, 'Erro ao carregar produtos.'); }
+  finally { loadingProducts.value = false; }
+});
 
 const loading = ref(false);
 const loadingItems = ref(false);
@@ -1700,6 +2114,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.management-header-actions, .management-sale-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.management-form { display: grid; gap: 16px; margin: 20px 0; }
+.management-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.management-sale-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) 40px; gap: 12px; align-items: end; }
+.management-sale-row .field-block, .management-fields .field-block { min-width: 0; }
+.management-sale-row :deep(.p-inputnumber), .management-fields :deep(.p-inputnumber) { width: 100%; }
+@media (max-width: 640px) {
+  .management-fields { grid-template-columns: minmax(0, 1fr); }
+  .management-sale-row { grid-template-columns: minmax(0, 1fr) 40px; }
+  .management-sale-row .field-block:first-child { grid-column: 1 / -1; }
+}
 .management-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
