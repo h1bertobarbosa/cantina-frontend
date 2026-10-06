@@ -308,6 +308,14 @@
           </li>
         </ul>
       </Message>
+      <Button
+        v-if="managementErrors.length"
+        label="Atualizar extrato"
+        icon="pi pi-refresh"
+        text
+        :disabled="loadingManagement || savingManagement"
+        @click="refreshManagedBilling"
+      />
       <p
         v-if="loadingManagement"
         role="status"
@@ -1314,6 +1322,8 @@ const showManagementDialog = ref(false);
 const loadingManagement = ref(false);
 const managementErrors = ref([]);
 const managedLedger = ref(null);
+const managementStale = ref(false);
+const managedBillingId = ref(null);
 const savingManagement = ref(false);
 const managementAction = ref('credits');
 const managementActions = [{ label: 'Credito', value: 'credits' }, { label: 'Debito', value: 'debits' }, { label: 'Venda', value: 'sales' }];
@@ -1327,7 +1337,7 @@ const managedSaleItems = ref([]);
 const addManagedSaleItem = () => managedSaleItems.value.push({ key: ++saleItemKey, productId: null, quantity: 1, price: null });
 const setManagedSalePrice = (item) => { item.price = Number(products.value.find(product => product.id === item.productId)?.price || 0); };
 const managedSaleTotal = computed(() => managedSaleItems.value.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * Number(item.quantity || 0) * 100), 0) / 100);
-const isManagedBillingMutable = computed(() => ['OPEN', 'PARTIAL'].includes(managedLedger.value?.billing.status));
+const isManagedBillingMutable = computed(() => !managementStale.value && ['OPEN', 'PARTIAL'].includes(managedLedger.value?.billing.status));
 const showCreateBillingDialog = ref(false);
 const pendingManagedBilling = ref(null);
 const openPendingManagedBilling = () => {
@@ -1344,6 +1354,8 @@ const reversalReason = ref('');
 const reversalErrors = ref([]);
 let managementRequest = 0;
 const openManagementDialog = async (billing) => {
+  managedBillingId.value = billing.id;
+  managementStale.value = false;
   managementAction.value = 'credits';
   managementFormErrors.value = [];
   Object.assign(managementForm, { amount: null, paymentMethod: 'PIX', description: '', purchaseDate: getTodayString() });
@@ -1367,12 +1379,19 @@ const openManagementDialog = async (billing) => {
 };
 
 const refreshManagedBilling = async () => {
-  const id = managedLedger.value.billing.id;
-  const response = await apiService.get(`/billings/${id}/ledger`);
-  const data = await response.json();
-  if (!response.ok) throw data;
-  managedLedger.value = data;
-  await fetchBillings();
+  loadingManagement.value = true;
+  managementStale.value = true;
+  managementErrors.value = [];
+  try {
+    const response = await apiService.get(`/billings/${managedBillingId.value}/ledger`);
+    const data = await response.json();
+    if (!response.ok) throw data;
+    managedLedger.value = data;
+    managementStale.value = false;
+    await fetchBillings();
+  } catch (error) {
+    managementErrors.value = ['Extrato desatualizado. Atualize antes de fazer outro lancamento.', ...normalizeMessages(error, 'Erro ao atualizar extrato.')];
+  } finally { loadingManagement.value = false; }
 };
 const submitManagementAction = async () => {
   if (savingManagement.value || !isManagedBillingMutable.value) return;
