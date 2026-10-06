@@ -578,6 +578,7 @@
       :style="{ width: '560px', maxWidth: '96vw' }"
       :closable="!savingCreateBilling"
       :close-on-escape="!savingCreateBilling"
+      @after-hide="openPendingManagedBilling"
     >
       <form
         class="management-form"
@@ -1328,6 +1329,12 @@ const setManagedSalePrice = (item) => { item.price = Number(products.value.find(
 const managedSaleTotal = computed(() => managedSaleItems.value.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * Number(item.quantity || 0) * 100), 0) / 100);
 const isManagedBillingMutable = computed(() => ['OPEN', 'PARTIAL'].includes(managedLedger.value?.billing.status));
 const showCreateBillingDialog = ref(false);
+const pendingManagedBilling = ref(null);
+const openPendingManagedBilling = () => {
+  const billing = pendingManagedBilling.value;
+  pendingManagedBilling.value = null;
+  if (billing) openManagementDialog(billing);
+};
 const savingCreateBilling = ref(false);
 const createBillingForm = reactive({ clientId: null, description: '', amount: 0 });
 const createBillingErrors = ref([]);
@@ -1337,6 +1344,7 @@ const reversalReason = ref('');
 const reversalErrors = ref([]);
 let managementRequest = 0;
 const openManagementDialog = async (billing) => {
+  managementAction.value = 'credits';
   managementFormErrors.value = [];
   Object.assign(managementForm, { amount: null, paymentMethod: 'PIX', description: '', purchaseDate: getTodayString() });
   managedSaleItems.value = [];
@@ -1396,6 +1404,7 @@ const submitManagementAction = async () => {
   finally { savingManagement.value = false; }
 };
 const openCreateBillingDialog = () => {
+  pendingManagedBilling.value = null;
   Object.assign(createBillingForm, { clientId: filters.clientId, description: '', amount: 0 });
   createBillingErrors.value = [];
   showCreateBillingDialog.value = true;
@@ -1412,14 +1421,14 @@ const createManagedBilling = async () => {
     const response = await apiService.post('/billings', { ...createBillingForm, description: createBillingForm.description.trim(), amount: createBillingForm.amount || 0 });
     const data = await response.json();
     if (response.status === 409 && data.activeBillingId) {
+      pendingManagedBilling.value = { id: data.activeBillingId };
       showCreateBillingDialog.value = false;
-      await openManagementDialog({ id: data.activeBillingId });
       return;
     }
     if (!response.ok) throw data;
-    showCreateBillingDialog.value = false;
     await fetchBillings();
-    await openManagementDialog(data);
+    pendingManagedBilling.value = data;
+    showCreateBillingDialog.value = false;
   } catch (error) { createBillingErrors.value = normalizeMessages(error, 'Erro ao criar fatura.'); }
   finally { savingCreateBilling.value = false; }
 };
