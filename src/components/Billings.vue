@@ -215,6 +215,14 @@
             <template #body="{ data }">
               <div class="actions-row">
                 <Button
+                  icon="pi pi-sliders-h"
+                  text
+                  severity="info"
+                  aria-label="Gerenciar fatura"
+                  title="Gerenciar fatura"
+                  @click="openManagementDialog(data)"
+                />
+                <Button
                   icon="pi pi-eye"
                   text
                   rounded
@@ -271,6 +279,115 @@
         />
       </template>
     </Card>
+
+    <Dialog
+      v-model:visible="showManagementDialog"
+      modal
+      header="Gerenciar fatura"
+      :style="{ width: '1000px', maxWidth: '96vw' }"
+    >
+      <Message
+        v-if="managementErrors.length"
+        severity="error"
+      >
+        <ul class="message-list">
+          <li
+            v-for="error in managementErrors"
+            :key="error"
+          >
+            {{ error }}
+          </li>
+        </ul>
+      </Message>
+      <p
+        v-if="loadingManagement"
+        role="status"
+      >
+        Carregando fatura...
+      </p>
+      <template v-else-if="managedLedger">
+        <div class="management-summary">
+          <div><span>Cliente</span><strong>{{ managedLedger.billing.clientName }}</strong></div>
+          <div>
+            <span>Status</span><Tag
+              :value="getBillingStatusMeta(managedLedger.billing).label"
+              :severity="getBillingStatusMeta(managedLedger.billing).severity"
+            />
+          </div>
+          <div><span>Saldo aberto</span><strong>{{ currency(managedLedger.openAmount) }}</strong></div>
+          <div><span>Valor pago</span><strong>{{ currency(managedLedger.billing.amountPayed) }}</strong></div>
+        </div>
+        <Message
+          v-if="managedLedger.creditBalance > 0"
+          severity="info"
+        >
+          Credito do cliente: {{ currency(managedLedger.creditBalance) }}
+        </Message>
+        <Message
+          v-if="Math.abs(managedLedger.openAmount - Math.max(0, managedLedger.ledgerTotal)) > 0.009"
+          severity="warn"
+        >
+          Saldo registrado: {{ currency(managedLedger.openAmount) }}. Total do extrato: {{ currency(managedLedger.ledgerTotal) }}.
+        </Message>
+        <DataTable
+          :value="managedLedger.items"
+          data-key="id"
+          striped-rows
+          scrollable
+          class="management-ledger"
+        >
+          <template #empty>
+            Nenhum lancamento.
+          </template>
+          <Column
+            field="description"
+            header="Descricao"
+          />
+          <Column header="Data">
+            <template #body="{ data }">
+              {{ formatDateTimeLabel(data.purchasedAt || data.createdAt) }}
+            </template>
+          </Column>
+          <Column header="Valor">
+            <template #body="{ data }">
+              {{ formatAmount(data.amount, data.type) }}
+            </template>
+          </Column>
+          <Column header="Situacao">
+            <template #body="{ data }">
+              <Tag
+                v-if="data.reversalOfItemId"
+                value="Estorno"
+                severity="info"
+                :title="data.reversalReason"
+              />
+              <Tag
+                v-else-if="data.reversedByItemId"
+                value="Estornado"
+                severity="secondary"
+              />
+              <Tag
+                v-else
+                :value="data.type === 'CREDIT' ? 'Credito' : 'Debito'"
+                :severity="data.type === 'CREDIT' ? 'success' : 'warn'"
+              />
+              <small
+                v-if="data.reversalReason"
+                class="reversal-note"
+              >{{ data.reversalReason }} · {{ data.reversedByUserName }}</small>
+            </template>
+          </Column>
+        </DataTable>
+      </template>
+      <template #footer>
+        <Button
+          label="Fechar"
+          icon="pi pi-times"
+          text
+          @click="showManagementDialog = false"
+        />
+      </template>
+    </Dialog>
 
     <Dialog
       v-model:visible="showDetailsDialog"
@@ -893,7 +1010,31 @@ const billingStatusOptions = [
   { label: 'Em aberto', value: 'open' },
   { label: 'Parcial', value: 'partial' },
   { label: 'Paga', value: 'paid' },
+  { label: 'Saldo credor', value: 'credit_balance' },
 ];
+
+const showManagementDialog = ref(false);
+const loadingManagement = ref(false);
+const managementErrors = ref([]);
+const managedLedger = ref(null);
+let managementRequest = 0;
+const openManagementDialog = async (billing) => {
+  showManagementDialog.value = true;
+  managedLedger.value = null;
+  managementErrors.value = [];
+  loadingManagement.value = true;
+  const request = ++managementRequest;
+  try {
+    const response = await apiService.get(`/billings/${billing.id}/ledger`);
+    const data = await response.json();
+    if (!response.ok) throw data;
+    if (request === managementRequest) managedLedger.value = data;
+  } catch (error) {
+    if (request === managementRequest) managementErrors.value = normalizeMessages(error, 'Erro ao carregar fatura.');
+  } finally {
+    if (request === managementRequest) loadingManagement.value = false;
+  }
+};
 
 const loading = ref(false);
 const loadingItems = ref(false);
@@ -1091,6 +1232,7 @@ const getPaymentMethodSeverity = (methodValue) => {
 };
 
 const getBillingStatusKey = (billing) => {
+  if (billing?.status) return billing.status.toLowerCase();
   if (billing?.payedAt) {
     return 'paid';
   }
@@ -1104,6 +1246,8 @@ const getBillingStatusKey = (billing) => {
 
 const getBillingStatusMeta = (billing) => {
   switch (getBillingStatusKey(billing)) {
+    case 'credit_balance':
+      return { label: 'Saldo credor', severity: 'info' };
     case 'paid':
       return { label: 'Paga', severity: 'success' };
     case 'partial':
@@ -1124,7 +1268,7 @@ const formatAmount = (amount, type) => {
 };
 
 const isBillingPayable = (billing) => (
-  getBillingStatusKey(billing) !== 'paid' && Number(billing?.amount || 0) > 0
+  ['open', 'partial'].includes(getBillingStatusKey(billing)) && Number(billing?.amount || 0) > 0
 );
 
 const getOrderDir = () => (sortOrder.value === 1 ? 'asc' : 'desc');
@@ -1556,6 +1700,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.management-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.management-summary > div { display: grid; gap: 8px; min-width: 0; }
+.management-summary span, .reversal-note { color: var(--app-text-muted); }
+.management-summary strong, .reversal-note { overflow-wrap: anywhere; }
+.reversal-note { display: block; margin-top: 6px; }
+.management-ledger { margin-top: 20px; }
+@media (max-width: 640px) {
+  .management-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .billings-page {
   display: grid;
   gap: 22px;
