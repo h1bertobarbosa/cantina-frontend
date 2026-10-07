@@ -288,12 +288,13 @@
     </Card>
 
     <Dialog
-      v-model:visible="showManagementDialog"
+      :visible="showManagementDialog"
       modal
       header="Gerenciar fatura"
       :closable="!savingManagement"
       :close-on-escape="!savingManagement"
       :style="{ width: '1000px', maxWidth: '96vw' }"
+      @update:visible="setManagementDialogVisibility"
     >
       <Message
         v-if="managementErrors.length"
@@ -574,7 +575,7 @@
           icon="pi pi-times"
           text
           :disabled="savingManagement"
-          @click="showManagementDialog = false"
+          @click="closeManagementDialog"
         />
       </template>
     </Dialog>
@@ -1343,7 +1344,9 @@ const pendingManagedBilling = ref(null);
 const openPendingManagedBilling = () => {
   const billing = pendingManagedBilling.value;
   pendingManagedBilling.value = null;
-  if (billing) openManagementDialog(billing);
+  if (!billing) return;
+
+  window.requestAnimationFrame(() => openManagementDialog(billing));
 };
 const savingCreateBilling = ref(false);
 const createBillingForm = reactive({ clientId: null, description: '', amount: 0 });
@@ -1353,6 +1356,16 @@ const reversalItem = ref(null);
 const reversalReason = ref('');
 const reversalErrors = ref([]);
 let managementRequest = 0;
+const closeManagementDialog = () => {
+  const activeElement = document.activeElement;
+  if (activeElement instanceof HTMLElement && activeElement.closest('.p-dialog')) {
+    activeElement.blur();
+  }
+  showManagementDialog.value = false;
+};
+const setManagementDialogVisibility = (visible) => {
+  if (!visible) closeManagementDialog();
+};
 const openManagementDialog = async (billing) => {
   managedBillingId.value = billing.id;
   managementStale.value = false;
