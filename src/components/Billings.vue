@@ -325,7 +325,7 @@
       </p>
       <template v-else-if="managedLedger">
         <div class="management-summary">
-          <div><span>Cliente</span><strong>{{ managedLedger.billing.clientName }}</strong></div>
+          <div><span>Titular financeiro</span><strong>{{ managedLedger.billing.clientName }}</strong></div>
           <div>
             <span>Status</span><Tag
               :value="getBillingStatusMeta(managedLedger.billing).label"
@@ -417,6 +417,17 @@
             >
               {{ productErrors.join(' ') }}
             </Message>
+            <div class="field-block">
+              <label for="managed-sale-consumer">Consumidor</label><Select
+                id="managed-sale-consumer"
+                v-model="selectedBillingConsumerId"
+                :options="managedBillingConsumers"
+                option-label="name"
+                option-value="id"
+                :loading="loadingBillingConsumers"
+                :disabled="savingManagement || loadingBillingConsumers"
+              />
+            </div>
             <div
               v-for="(item, index) in managedSaleItems"
               :key="item.key"
@@ -512,6 +523,10 @@
           <template #empty>
             Nenhum lancamento.
           </template>
+          <Column
+            field="clientName"
+            header="Consumidor"
+          />
           <Column
             field="description"
             header="Descricao"
@@ -886,7 +901,7 @@
       </Message>
 
       <div class="dialog-header-copy">
-        <strong>{{ currentBilling.clientName || 'Cliente' }}</strong>
+        <strong>Titular financeiro: {{ currentBilling.clientName || 'Cliente' }}</strong>
         <span>{{ currentBilling.description || 'Sem descricao' }}</span>
       </div>
 
@@ -902,6 +917,11 @@
             <span>Nenhum item encontrado para esta fatura.</span>
           </div>
         </template>
+
+        <Column
+          field="clientName"
+          header="Consumidor"
+        />
 
         <Column
           field="description"
@@ -984,7 +1004,7 @@
       >
         <div class="receipt-client">
           <h3 class="receipt-title">
-            Dados do cliente
+            Titular financeiro
           </h3>
           <p><strong>Nome:</strong> {{ receiptData.client.name || 'N/A' }}</p>
           <p><strong>Email:</strong> {{ receiptData.client.email || 'N/A' }}</p>
@@ -1009,6 +1029,11 @@
                 <span>Nenhum item encontrado.</span>
               </div>
             </template>
+
+            <Column
+              field="clientName"
+              header="Consumidor"
+            />
 
             <Column
               field="description"
@@ -1333,6 +1358,9 @@ const managementFormErrors = ref([]);
 const products = ref([]);
 const loadingProducts = ref(false);
 const productErrors = ref([]);
+const managedBillingConsumers = ref([]);
+const selectedBillingConsumerId = ref(null);
+const loadingBillingConsumers = ref(false);
 let saleItemKey = 0;
 const managedSaleItems = ref([]);
 const addManagedSaleItem = () => managedSaleItems.value.push({ key: ++saleItemKey, productId: null, quantity: 1, price: null });
@@ -1366,6 +1394,24 @@ const closeManagementDialog = () => {
 const setManagementDialogVisibility = (visible) => {
   if (!visible) closeManagementDialog();
 };
+const loadManagedBillingConsumers = async (billing) => {
+  managedBillingConsumers.value = [{ id: billing.clientId, name: billing.clientName }];
+  selectedBillingConsumerId.value = billing.clientId;
+  loadingBillingConsumers.value = true;
+  try {
+    const response = await apiService.get(`/clients/${billing.clientId}/dependencies`);
+    const data = await response.json();
+    if (!response.ok) throw data;
+    managedBillingConsumers.value = [data.client, ...(data.dependents || [])].filter(Boolean);
+  } catch (error) {
+    managementErrors.value = [
+      ...managementErrors.value,
+      ...normalizeMessages(error, 'Erro ao carregar consumidores da fatura.'),
+    ];
+  } finally {
+    loadingBillingConsumers.value = false;
+  }
+};
 const openManagementDialog = async (billing) => {
   managedBillingId.value = billing.id;
   managementStale.value = false;
@@ -1374,6 +1420,8 @@ const openManagementDialog = async (billing) => {
   Object.assign(managementForm, { amount: null, paymentMethod: 'PIX', description: '', purchaseDate: getTodayString() });
   managedSaleItems.value = [];
   addManagedSaleItem();
+  managedBillingConsumers.value = [];
+  selectedBillingConsumerId.value = billing.clientId;
   showManagementDialog.value = true;
   managedLedger.value = null;
   managementErrors.value = [];
@@ -1383,7 +1431,10 @@ const openManagementDialog = async (billing) => {
     const response = await apiService.get(`/billings/${billing.id}/ledger`);
     const data = await response.json();
     if (!response.ok) throw data;
-    if (request === managementRequest) managedLedger.value = data;
+    if (request === managementRequest) {
+      managedLedger.value = data;
+      await loadManagedBillingConsumers(data.billing);
+    }
   } catch (error) {
     if (request === managementRequest) managementErrors.value = normalizeMessages(error, 'Erro ao carregar fatura.');
   } finally {
@@ -1412,10 +1463,17 @@ const submitManagementAction = async () => {
   const action = managementAction.value;
   let payload;
   if (action === 'sales') {
+    if (!selectedBillingConsumerId.value) {
+      managementFormErrors.value = ['Selecione o consumidor.']; return;
+    }
     if (!managedSaleItems.value.length || managedSaleItems.value.some(item => !item.productId || !Number.isInteger(item.quantity) || item.quantity < 1 || !(item.price > 0))) {
       managementFormErrors.value = ['Selecione produto, quantidade inteira e preco maior que zero.']; return;
     }
-    payload = { items: managedSaleItems.value.map(({ productId, price, quantity }) => ({ productId, price, quantity })), buyDate: managementForm.purchaseDate || undefined };
+    payload = {
+      clientId: selectedBillingConsumerId.value,
+      items: managedSaleItems.value.map(({ productId, price, quantity }) => ({ productId, price, quantity })),
+      buyDate: managementForm.purchaseDate || undefined,
+    };
   } else {
     if (!(managementForm.amount > 0)) managementFormErrors.value.push('Informe um valor maior que zero.');
     if (action === 'credits' && !managementForm.paymentMethod) managementFormErrors.value.push('Selecione o metodo de pagamento.');
