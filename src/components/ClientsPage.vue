@@ -130,6 +130,15 @@
                   @click="openViewClientDialog(data)"
                 />
                 <Button
+                  icon="pi pi-users"
+                  text
+                  rounded
+                  severity="secondary"
+                  aria-label="Gerenciar dependentes"
+                  title="Gerenciar dependentes"
+                  @click="openDependenciesDialog(data)"
+                />
+                <Button
                   icon="pi pi-pencil"
                   text
                   rounded
@@ -293,6 +302,17 @@
           <span class="details-item__label">Ultima atualizacao</span>
           <strong>{{ formatDateWithHour(currentClient.updatedAt) }}</strong>
         </div>
+        <div class="details-item">
+          <span class="details-item__label">Responsavel financeiro</span>
+          <strong>{{ dependencyDetails.responsible?.name || 'Sem responsavel' }}</strong>
+        </div>
+        <div class="details-item">
+          <span class="details-item__label">Dependentes</span>
+          <strong v-if="dependencyDetails.dependents.length">
+            {{ dependencyDetails.dependents.map((dependent) => dependent.name).join(', ') }}
+          </strong>
+          <strong v-else>Nenhum dependente</strong>
+        </div>
       </div>
 
       <template #footer>
@@ -301,6 +321,154 @@
           severity="secondary"
           variant="text"
           @click="showDetailsDialog = false"
+        />
+      </template>
+    </Dialog>
+
+    <Dialog
+      v-model:visible="showDependenciesDialog"
+      modal
+      header="Gerenciar dependentes"
+      :style="{ width: '38rem' }"
+      :breakpoints="{ '960px': '94vw' }"
+      @hide="closeDependenciesDialog"
+    >
+      <Message
+        v-if="dependencyErrorMessages.length"
+        severity="error"
+        class="dialog-message"
+      >
+        <ul class="message-list">
+          <li
+            v-for="(error, index) in dependencyErrorMessages"
+            :key="`dependency-error-${index}`"
+          >
+            {{ error }}
+          </li>
+        </ul>
+      </Message>
+
+      <p
+        v-if="loadingDependencies"
+        class="dependency-empty"
+      >
+        Carregando relacionamentos...
+      </p>
+
+      <div
+        v-else
+        class="dependency-content"
+      >
+        <div class="details-item">
+          <span class="details-item__label">Cliente</span>
+          <strong>{{ dependencyDetails.client?.name || dependencyClient.name }}</strong>
+        </div>
+
+        <Message
+          v-if="dependencyDetails.responsible"
+          severity="info"
+        >
+          Este cliente depende de {{ dependencyDetails.responsible.name }}. Remova esse vínculo antes de adicionar dependentes.
+        </Message>
+
+        <form
+          v-if="!dependencyDetails.responsible"
+          class="dependency-form"
+          @submit.prevent="addDependent"
+        >
+          <div class="field-block">
+            <label
+              class="field-label"
+              for="dependent-client"
+            >Adicionar dependente</label>
+            <Select
+              id="dependent-client"
+              v-model="selectedDependentId"
+              :options="eligibleDependents"
+              option-label="name"
+              option-value="id"
+              placeholder="Selecione um cliente"
+              filter
+              show-clear
+              :disabled="savingDependency"
+            />
+          </div>
+          <div class="dialog-actions">
+            <Button
+              label="Adicionar"
+              icon="pi pi-plus"
+              type="submit"
+              :disabled="!selectedDependentId"
+              :loading="savingDependency"
+            />
+          </div>
+        </form>
+
+        <div class="dependents-section">
+          <h3 class="dependents-section__title">
+            Dependentes vinculados
+          </h3>
+          <div
+            v-if="dependencyDetails.dependents.length"
+            class="dependents-list"
+          >
+            <div
+              v-for="dependent in dependencyDetails.dependents"
+              :key="dependent.id"
+              class="dependent-row"
+            >
+              <span>{{ dependent.name }}</span>
+              <Button
+                icon="pi pi-times"
+                text
+                rounded
+                severity="danger"
+                aria-label="Remover dependente"
+                @click="openRemoveDependencyDialog(dependent)"
+              />
+            </div>
+          </div>
+          <p
+            v-else
+            class="dependency-empty"
+          >
+            Nenhum dependente vinculado.
+          </p>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button
+          label="Fechar"
+          severity="secondary"
+          variant="text"
+          @click="closeDependenciesDialog"
+        />
+      </template>
+    </Dialog>
+
+    <Dialog
+      v-model:visible="showRemoveDependencyDialog"
+      modal
+      header="Remover dependencia"
+      :style="{ width: '28rem' }"
+      :breakpoints="{ '960px': '90vw' }"
+    >
+      <p class="delete-text">
+        Remover {{ dependentToRemove?.name }} dos dependentes de {{ dependencyClient.name }}? Compras e faturas anteriores permanecerao inalteradas.
+      </p>
+      <template #footer>
+        <Button
+          label="Cancelar"
+          severity="secondary"
+          variant="text"
+          @click="closeRemoveDependencyDialog"
+        />
+        <Button
+          label="Remover"
+          severity="danger"
+          :loading="removingDependency"
+          @click="removeDependent"
         />
       </template>
     </Dialog>
@@ -347,6 +515,7 @@ import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
 import Paginator from 'primevue/paginator';
+import Select from 'primevue/select';
 import { apiService } from '../services/apiService';
 import { vMaska } from '../directives/maska';
 import { formatDateHour } from '../utils/formatDate';
@@ -355,16 +524,31 @@ const clients = ref([]);
 const loading = ref(false);
 const saving = ref(false);
 const deleting = ref(false);
+const loadingDependencies = ref(false);
+const savingDependency = ref(false);
+const removingDependency = ref(false);
 
 const showClientFormDialog = ref(false);
 const showDetailsDialog = ref(false);
 const showDeleteConfirmDialog = ref(false);
+const showDependenciesDialog = ref(false);
+const showRemoveDependencyDialog = ref(false);
 
 const generalErrorMessages = ref([]);
 const modalErrorMessages = ref([]);
+const dependencyErrorMessages = ref([]);
 
 const isEditing = ref(false);
 const clientToDeleteId = ref(null);
+const selectedDependentId = ref(null);
+const dependentToRemove = ref(null);
+const dependencyCandidates = ref([]);
+const dependencyClient = reactive({ id: null, name: '' });
+const dependencyDetails = reactive({
+  client: null,
+  responsible: null,
+  dependents: [],
+});
 
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -394,6 +578,14 @@ const maskOptions = {
 };
 
 const firstRecordIndex = computed(() => (currentPage.value - 1) * pageSize.value);
+const eligibleDependents = computed(() => {
+  const linkedIds = new Set(dependencyDetails.dependents.map((dependent) => dependent.id));
+  return dependencyCandidates.value.filter((candidate) => (
+    candidate.id !== dependencyClient.id
+      && !candidate.responsibleClientId
+      && !linkedIds.has(candidate.id)
+  ));
+});
 
 const getOrderDir = () => (sortOrder.value === -1 ? 'desc' : 'asc');
 
@@ -573,9 +765,132 @@ const saveClient = async () => {
   }
 };
 
-const openViewClientDialog = (client) => {
+const loadDependencyDetails = async (clientId) => {
+  const response = await apiService.get(`/clients/${clientId}/dependencies`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw data.message || 'Erro ao buscar dependencias.';
+  }
+  Object.assign(dependencyDetails, {
+    client: data.client || null,
+    responsible: data.responsible || null,
+    dependents: data.dependents || [],
+  });
+};
+
+const fetchDependencyCandidates = async () => {
+  const params = new URLSearchParams({
+    page: '1',
+    perPage: String(Math.max(totalRecords.value, 50)),
+    sortBy: 'name',
+    orderDir: 'asc',
+  });
+  const response = await apiService.get(`/clients?${params.toString()}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw data.message || 'Erro ao buscar clientes disponiveis.';
+  }
+  dependencyCandidates.value = data.data || [];
+};
+
+const openViewClientDialog = async (client) => {
   Object.assign(currentClient, client);
   showDetailsDialog.value = true;
+  try {
+    await loadDependencyDetails(client.id);
+  } catch (error) {
+    console.error('Erro ao buscar detalhes de dependencia:', error);
+    generalErrorMessages.value = normalizeMessages(error, 'Erro ao buscar detalhes do cliente.');
+  }
+};
+
+const openDependenciesDialog = async (client) => {
+  Object.assign(dependencyClient, { id: client.id, name: client.name });
+  Object.assign(dependencyDetails, { client: null, responsible: null, dependents: [] });
+  selectedDependentId.value = null;
+  dependencyErrorMessages.value = [];
+  showDependenciesDialog.value = true;
+  loadingDependencies.value = true;
+  try {
+    await Promise.all([
+      loadDependencyDetails(client.id),
+      fetchDependencyCandidates(),
+    ]);
+  } catch (error) {
+    console.error('Erro ao carregar dependencias:', error);
+    dependencyErrorMessages.value = normalizeMessages(error, 'Erro ao carregar dependencias.');
+  } finally {
+    loadingDependencies.value = false;
+  }
+};
+
+const closeDependenciesDialog = () => {
+  showDependenciesDialog.value = false;
+  selectedDependentId.value = null;
+  dependencyErrorMessages.value = [];
+};
+
+const addDependent = async () => {
+  if (!selectedDependentId.value || !dependencyClient.id) return;
+  savingDependency.value = true;
+  dependencyErrorMessages.value = [];
+  try {
+    const response = await apiService.post(
+      `/clients/${dependencyClient.id}/dependents`,
+      { dependentClientId: selectedDependentId.value },
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw data.message || 'Erro ao adicionar dependente.';
+    }
+    selectedDependentId.value = null;
+    await Promise.all([
+      loadDependencyDetails(dependencyClient.id),
+      fetchDependencyCandidates(),
+      fetchClients(),
+    ]);
+  } catch (error) {
+    console.error('Erro ao adicionar dependente:', error);
+    dependencyErrorMessages.value = normalizeMessages(error, 'Erro ao adicionar dependente.');
+  } finally {
+    savingDependency.value = false;
+  }
+};
+
+const openRemoveDependencyDialog = (dependent) => {
+  dependentToRemove.value = dependent;
+  showRemoveDependencyDialog.value = true;
+};
+
+const closeRemoveDependencyDialog = () => {
+  showRemoveDependencyDialog.value = false;
+  dependentToRemove.value = null;
+};
+
+const removeDependent = async () => {
+  if (!dependencyClient.id || !dependentToRemove.value?.id) return;
+  removingDependency.value = true;
+  dependencyErrorMessages.value = [];
+  try {
+    const response = await apiService.delete(
+      `/clients/${dependencyClient.id}/dependents/${dependentToRemove.value.id}`,
+    );
+    if (!response.ok) {
+      const data = await response.json();
+      throw data.message || 'Erro ao remover dependente.';
+    }
+    closeRemoveDependencyDialog();
+    await Promise.all([
+      loadDependencyDetails(dependencyClient.id),
+      fetchDependencyCandidates(),
+      fetchClients(),
+    ]);
+  } catch (error) {
+    console.error('Erro ao remover dependente:', error);
+    dependencyErrorMessages.value = normalizeMessages(error, 'Erro ao remover dependente.');
+  } finally {
+    removingDependency.value = false;
+  }
 };
 
 const openDeleteConfirmDialog = (id) => {
@@ -738,9 +1053,38 @@ fetchClients();
 }
 
 .client-form,
-.details-grid {
+.details-grid,
+.dependency-content,
+.dependency-form,
+.dependents-section {
   display: grid;
   gap: 18px;
+}
+
+.dependents-section__title {
+  margin: 0;
+  color: var(--app-text);
+  font-size: 1rem;
+}
+
+.dependents-list {
+  display: grid;
+  gap: 8px;
+}
+
+.dependent-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-control-radius);
+}
+
+.dependency-empty {
+  margin: 0;
+  color: var(--app-text-muted);
 }
 
 .field-block {
