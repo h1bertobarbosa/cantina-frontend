@@ -779,18 +779,31 @@ const loadDependencyDetails = async (clientId) => {
 };
 
 const fetchDependencyCandidates = async () => {
-  const params = new URLSearchParams({
-    page: '1',
-    perPage: String(Math.max(totalRecords.value, 50)),
-    sortBy: 'name',
-    orderDir: 'asc',
-  });
-  const response = await apiService.get(`/clients?${params.toString()}`);
-  const data = await response.json();
-  if (!response.ok) {
-    throw data.message || 'Erro ao buscar clientes disponiveis.';
-  }
-  dependencyCandidates.value = data.data || [];
+  const fetchPage = async (page) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      perPage: '50',
+      sortBy: 'name',
+      orderDir: 'asc',
+    });
+    const response = await apiService.get(`/clients?${params.toString()}`);
+    const data = await response.json();
+    if (!response.ok) {
+      throw data.message || 'Erro ao buscar clientes disponiveis.';
+    }
+    return data;
+  };
+
+  const firstPage = await fetchPage(1);
+  const total = Number(firstPage.meta?.total || firstPage.data?.length || 0);
+  const perPage = Number(firstPage.meta?.perPage || 50);
+  const pageCount = Math.ceil(total / perPage);
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(pageCount - 1, 0) }, (_, index) => fetchPage(index + 2)),
+  );
+
+  dependencyCandidates.value = [firstPage, ...remainingPages]
+    .flatMap((page) => page.data || []);
 };
 
 const openViewClientDialog = async (client) => {
