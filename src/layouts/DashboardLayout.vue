@@ -165,6 +165,7 @@ const baseNavigationItems = [
   { label: 'Faturas', to: '/dashboard/billings', icon: 'pi-file' },
   { label: 'Usuarios', to: '/dashboard/users', icon: 'pi-id-card' },
   { label: 'Historico', to: '/charge-history', icon: 'pi-history' },
+  { label: 'Ajuda', to: '/docs', icon: 'pi-book' },
 ];
 
 const getDecodedUser = () => {
@@ -244,6 +245,12 @@ const pageContextMap = [
     eyebrow: 'Auditoria',
     title: 'Historico de lancamentos',
     description: 'Consulte os registros recentes da conta.',
+  },
+  {
+    match: (path) => path.startsWith('/docs'),
+    eyebrow: 'Central de ajuda',
+    title: 'Documentacao',
+    description: 'Consulte guias de uso da plataforma.',
   },
 ];
 

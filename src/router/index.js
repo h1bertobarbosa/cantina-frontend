@@ -71,6 +71,11 @@ const routes = [
         name: "ChargeHistory",
         component: () => import("../components/ChargeHistory.vue"),
       },
+      {
+        path: "/docs",
+        name: "Docs",
+        component: () => import("../components/DocsPage.vue"),
+      },
     ],
   },
 ];
