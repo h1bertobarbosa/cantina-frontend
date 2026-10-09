@@ -66,6 +66,10 @@
         <a href="#como-funciona">Como funciona</a>
         <a href="#passo-a-passo">Vincular dependente</a>
         <a href="#fatura">Fatura consolidada</a>
+        <a href="#ciclo-fatura">Ciclo da fatura</a>
+        <a href="#gerenciar-fatura">Gerenciar fatura</a>
+        <a href="#pagamentos">Pagamentos</a>
+        <a href="#acoes-fatura">Ações e consultas</a>
         <a href="#remover">Remover vínculo</a>
         <a href="#regras">Regras importantes</a>
       </nav>
@@ -214,11 +218,332 @@
         </section>
 
         <section
+          id="ciclo-fatura"
+          class="docs-section"
+        >
+          <div class="section-number">
+            04
+          </div>
+          <div>
+            <p class="section-eyebrow">
+              Do primeiro débito ao fechamento
+            </p>
+            <h2>Como uma fatura abre, muda de status e fecha</h2>
+            <p>
+              O sistema mantém uma fatura ativa por titular financeiro. Ela pode
+              nascer automaticamente com uma venda ou ser criada manualmente em
+              <strong>Nova fatura</strong>.
+            </p>
+          </div>
+
+          <div class="billing-cycle">
+            <div class="billing-cycle__step">
+              <span class="billing-cycle__index">1</span>
+              <div>
+                <small>Abertura</small>
+                <h3>Primeira venda ou criação manual</h3>
+                <p>
+                  Se não houver uma fatura ativa, a primeira venda abre uma
+                  automaticamente. Na criação manual, informe o titular, uma
+                  descrição e, se necessário, um débito inicial.
+                </p>
+              </div>
+            </div>
+            <i class="pi pi-arrow-right billing-cycle__arrow" />
+            <div class="billing-cycle__step">
+              <span class="billing-cycle__index">2</span>
+              <div>
+                <small>Movimentação</small>
+                <h3>Débitos e créditos alteram o saldo</h3>
+                <p>
+                  Vendas e débitos aumentam o valor devido. Pagamentos e créditos
+                  reduzem esse valor. O extrato preserva cada movimentação.
+                </p>
+              </div>
+            </div>
+            <i class="pi pi-arrow-right billing-cycle__arrow" />
+            <div class="billing-cycle__step">
+              <span class="billing-cycle__index">3</span>
+              <div>
+                <small>Fechamento</small>
+                <h3>Saldo zerado fecha a fatura</h3>
+                <p>
+                  Quando os créditos igualam os débitos, o status muda para
+                  <strong>Paga</strong>. A fatura fechada fica somente para
+                  consulta e não recebe novos lançamentos.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <aside class="docs-callout docs-callout--blue">
+            <i class="pi pi-refresh" />
+            <div>
+              <strong>E a próxima compra?</strong>
+              <p>
+                Se a fatura anterior já estiver paga, uma nova venda abre outra
+                fatura automaticamente. Não é necessário reabrir a anterior.
+              </p>
+            </div>
+          </aside>
+        </section>
+
+        <section
+          id="gerenciar-fatura"
+          class="docs-section"
+        >
+          <div class="section-number">
+            05
+          </div>
+          <div>
+            <p class="section-eyebrow">
+              Operação diária
+            </p>
+            <h2>Todas as opções de Gerenciar fatura</h2>
+            <p>
+              Clique no botão <i class="pi pi-sliders-h" /> da linha desejada.
+              O painel mostra titular, status, saldo aberto, valor pago e o
+              extrato completo antes de qualquer operação.
+            </p>
+          </div>
+
+          <div class="management-options">
+            <article class="management-option">
+              <div class="management-option__symbol management-option__symbol--credit">
+                <i class="pi pi-arrow-down-left" />
+              </div>
+              <div>
+                <span>Reduz o saldo</span>
+                <h3>Crédito</h3>
+                <p>
+                  Registra um valor recebido ou concedido. Informe valor, método
+                  de pagamento e, opcionalmente, uma descrição.
+                </p>
+              </div>
+            </article>
+            <article class="management-option">
+              <div class="management-option__symbol management-option__symbol--debit">
+                <i class="pi pi-arrow-up-right" />
+              </div>
+              <div>
+                <span>Aumenta o saldo</span>
+                <h3>Débito</h3>
+                <p>
+                  Inclui uma cobrança avulsa. Valor e descrição são obrigatórios;
+                  a data da compra pode ser ajustada.
+                </p>
+              </div>
+            </article>
+            <article class="management-option">
+              <div class="management-option__symbol management-option__symbol--sale">
+                <i class="pi pi-shopping-cart" />
+              </div>
+              <div>
+                <span>Registra consumo</span>
+                <h3>Venda</h3>
+                <p>
+                  Selecione consumidor, produtos, quantidades, preços e data. É
+                  possível lançar vários produtos na mesma operação.
+                </p>
+              </div>
+            </article>
+            <article class="management-option">
+              <div class="management-option__symbol management-option__symbol--reversal">
+                <i class="pi pi-undo" />
+              </div>
+              <div>
+                <span>Corrige sem apagar</span>
+                <h3>Estorno</h3>
+                <p>
+                  Use o botão de desfazer no lançamento e informe o motivo. O
+                  sistema cria uma movimentação inversa e mantém a trilha de auditoria.
+                </p>
+              </div>
+            </article>
+          </div>
+
+          <aside class="docs-callout docs-callout--warm">
+            <i class="pi pi-info-circle" />
+            <div>
+              <strong>Crédito e Pagar chegam ao mesmo resultado financeiro</strong>
+              <p>
+                Use <strong>Pagar</strong> para recebimento rápido da fatura. Use
+                <strong>Crédito</strong> dentro do gerenciamento quando precisar
+                conferir o extrato e registrar uma descrição junto ao recebimento.
+              </p>
+            </div>
+          </aside>
+        </section>
+
+        <section
+          id="pagamentos"
+          class="docs-section"
+        >
+          <div class="section-number">
+            06
+          </div>
+          <div>
+            <p class="section-eyebrow">
+              Pagamento menor, igual ou maior
+            </p>
+            <h2>O saldo decide o que acontece depois</h2>
+            <p>
+              No botão <strong>Pagar</strong>, informe o método e o valor realmente
+              recebido. O sistema compara esse crédito com o saldo em aberto.
+            </p>
+          </div>
+
+          <div class="payment-scenarios">
+            <article>
+              <div class="payment-scenarios__equation">
+                <span>Recebido</span>
+                <strong>&lt;</strong>
+                <span>Saldo</span>
+              </div>
+              <p class="payment-scenarios__status payment-scenarios__status--partial">
+                Pagamento parcial
+              </p>
+              <h3>Quando paga a menos</h3>
+              <p>
+                O valor recebido entra como crédito, a fatura muda para
+                <strong>Parcial</strong> e continua aberta com o restante. Novos
+                pagamentos e compras ainda podem ser lançados nela.
+              </p>
+              <div class="payment-example">
+                <span>Exemplo</span>
+                R$ 100,00 − R$ 40,00 = <strong>R$ 60,00 em aberto</strong>
+              </div>
+            </article>
+            <article>
+              <div class="payment-scenarios__equation">
+                <span>Recebido</span>
+                <strong>=</strong>
+                <span>Saldo</span>
+              </div>
+              <p class="payment-scenarios__status payment-scenarios__status--paid">
+                Pagamento integral
+              </p>
+              <h3>Quando paga o valor exato</h3>
+              <p>
+                O saldo chega a zero, a data de pagamento é registrada e a fatura
+                muda para <strong>Paga</strong>. Ela deixa de aceitar novas movimentações.
+              </p>
+              <div class="payment-example">
+                <span>Exemplo</span>
+                R$ 100,00 − R$ 100,00 = <strong>R$ 0,00 em aberto</strong>
+              </div>
+            </article>
+            <article>
+              <div class="payment-scenarios__equation">
+                <span>Recebido</span>
+                <strong>&gt;</strong>
+                <span>Saldo</span>
+              </div>
+              <p class="payment-scenarios__status payment-scenarios__status--credit">
+                Saldo credor
+              </p>
+              <h3>Quando paga a mais</h3>
+              <p>
+                A dívida é quitada e a diferença vira crédito do cliente. Nas
+                próximas compras, o sistema usa primeiro esse crédito e cobra
+                somente o que ultrapassar o valor disponível.
+              </p>
+              <div class="payment-example">
+                <span>Exemplo</span>
+                R$ 100,00 − R$ 120,00 = <strong>R$ 20,00 de crédito</strong>
+              </div>
+            </article>
+          </div>
+
+          <div class="credit-consumption">
+            <div>
+              <span>Crédito disponível</span>
+              <strong>R$ 20,00</strong>
+            </div>
+            <i class="pi pi-minus" />
+            <div>
+              <span>Nova compra</span>
+              <strong>R$ 35,00</strong>
+            </div>
+            <i class="pi pi-equals" />
+            <div class="credit-consumption__result">
+              <span>Novo saldo devido</span>
+              <strong>R$ 15,00</strong>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="acoes-fatura"
+          class="docs-section"
+        >
+          <div class="section-number">
+            07
+          </div>
+          <div>
+            <p class="section-eyebrow">
+              Botões da lista
+            </p>
+            <h2>Consultas, edição e ações adicionais</h2>
+          </div>
+
+          <div class="action-reference">
+            <div>
+              <i class="pi pi-eye" />
+              <strong>Detalhes</strong>
+              <p>Consulta identificação, valores, status, método e datas da fatura.</p>
+            </div>
+            <div>
+              <i class="pi pi-wallet" />
+              <strong>Pagar</strong>
+              <p>Registra pagamento parcial, integral ou acima do saldo.</p>
+            </div>
+            <div>
+              <i class="pi pi-list" />
+              <strong>Itens</strong>
+              <p>Lista as movimentações e permite corrigir a data de compra.</p>
+            </div>
+            <div>
+              <i class="pi pi-receipt" />
+              <strong>Resumo</strong>
+              <p>Exibe os dados do titular, os itens incluídos e o total.</p>
+            </div>
+            <div>
+              <i class="pi pi-trash" />
+              <strong>Excluir</strong>
+              <p>
+                Exclui a fatura e seus registros relacionados. Exige observação,
+                gera auditoria e não pode ser desfeito.
+              </p>
+            </div>
+            <div>
+              <i class="pi pi-history" />
+              <strong>Histórico de cobrança</strong>
+              <p>
+                Registra uma ocorrência histórica com cliente, descrição, valor
+                e data. <strong>Não altera o saldo da fatura.</strong>
+              </p>
+            </div>
+          </div>
+
+          <aside class="docs-callout docs-callout--blue">
+            <i class="pi pi-filter" />
+            <div>
+              <strong>Use os filtros para localizar rapidamente</strong>
+              <p>
+                A lista pode ser filtrada por cliente, método e status: Em aberto,
+                Parcial, Paga ou Saldo credor.
+              </p>
+            </div>
+          </aside>
+        </section>
+
+        <section
           id="remover"
           class="docs-section docs-remove"
         >
           <div class="section-number">
-            04
+            08
           </div>
           <div>
             <p class="section-eyebrow">
@@ -245,7 +570,7 @@
           class="docs-section"
         >
           <div class="section-number">
-            05
+            09
           </div>
           <div>
             <p class="section-eyebrow">
@@ -680,6 +1005,288 @@
   color: var(--docs-blue);
 }
 
+.billing-cycle {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 2.6rem;
+}
+
+.billing-cycle__step {
+  align-self: stretch;
+  padding: 1.5rem;
+  border-top: 2px solid #8db6e3;
+  background: #edf4fb;
+}
+
+.billing-cycle__index {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #102a43;
+  color: #f7fbff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.billing-cycle__step small,
+.management-option span {
+  color: #607d98;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.billing-cycle__step h3,
+.management-option h3,
+.payment-scenarios h3 {
+  margin: 0.55rem 0;
+  font-size: 1.08rem;
+  line-height: 1.3;
+}
+
+.billing-cycle__step p,
+.management-option p,
+.payment-scenarios article > p,
+.action-reference p {
+  margin: 0;
+  color: #536b82;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.billing-cycle__arrow {
+  color: #829bb3;
+}
+
+.docs-callout {
+  grid-column: 2;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-top: 2rem;
+  padding: 1.35rem 1.5rem;
+  border-radius: 1rem;
+}
+
+.docs-callout > i {
+  margin-top: 0.15rem;
+  font-size: 1.35rem;
+}
+
+.docs-callout p {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.docs-callout--blue {
+  background: #e3effc;
+}
+
+.docs-callout--blue > i {
+  color: #1d4ed8;
+}
+
+.docs-callout--warm {
+  background: var(--docs-warm);
+}
+
+.docs-callout--warm > i {
+  color: #9a620c;
+}
+
+.docs-callout--warm p {
+  color: #74654b;
+}
+
+.management-options {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 2.6rem;
+  border-top: 1px solid #cad9e7;
+  border-left: 1px solid #cad9e7;
+}
+
+.management-option {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 1.1rem;
+  padding: clamp(1.4rem, 3vw, 2rem);
+  border-right: 1px solid #cad9e7;
+  border-bottom: 1px solid #cad9e7;
+}
+
+.management-option__symbol {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.1rem;
+}
+
+.management-option__symbol--credit {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.management-option__symbol--debit {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.management-option__symbol--sale {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.management-option__symbol--reversal {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.payment-scenarios {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 2.6rem;
+}
+
+.payment-scenarios article {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.6rem;
+  border: 1px solid #cddbe8;
+  border-radius: 1.25rem;
+  background: #f8fbfe;
+}
+
+.payment-scenarios__equation {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 1.4rem;
+  color: #6a8095;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.payment-scenarios__equation strong {
+  color: #102a43;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+}
+
+.payment-scenarios__status {
+  align-self: flex-start;
+  margin: 0 0 0.4rem !important;
+  padding: 0.32rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem !important;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1 !important;
+  text-transform: uppercase;
+}
+
+.payment-scenarios__status--partial {
+  background: #ffedd5;
+  color: #9a3412 !important;
+}
+
+.payment-scenarios__status--paid {
+  background: #dcfce7;
+  color: #166534 !important;
+}
+
+.payment-scenarios__status--credit {
+  background: #dbeafe;
+  color: #1e40af !important;
+}
+
+.payment-example {
+  margin-top: auto;
+  padding-top: 1.5rem;
+  color: #405d77;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.payment-example span {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #7b90a4;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.credit-consumption {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1.25rem;
+  padding: 1.4rem 1.6rem;
+  background: #102a43;
+  color: #f7fbff;
+}
+
+.credit-consumption > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.credit-consumption span {
+  color: #a8bfd4;
+  font-size: 0.72rem;
+}
+
+.credit-consumption__result {
+  color: #bfdbfe;
+}
+
+.action-reference {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 2.4rem;
+  border-top: 1px solid #cad9e7;
+  border-left: 1px solid #cad9e7;
+}
+
+.action-reference > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem 0.85rem;
+  padding: 1.5rem;
+  border-right: 1px solid #cad9e7;
+  border-bottom: 1px solid #cad9e7;
+}
+
+.action-reference i {
+  grid-row: 1 / span 2;
+  color: var(--docs-blue);
+  font-size: 1.15rem;
+}
+
+.action-reference p {
+  grid-column: 2;
+}
+
 .docs-remove {
   grid-template-columns: 54px minmax(0, 1fr) minmax(250px, 0.55fr);
   align-items: center;
@@ -771,6 +1378,17 @@
     grid-template-columns: 54px minmax(0, 1fr);
   }
 
+  .billing-cycle,
+  .payment-scenarios,
+  .action-reference {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-cycle__arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+
   .docs-section--split .docs-figure,
   .history-note {
     grid-column: 2;
@@ -791,7 +1409,8 @@
   }
 
   .diagram-dependents,
-  .rules-grid {
+  .rules-grid,
+  .management-options {
     grid-template-columns: 1fr;
   }
 
@@ -823,8 +1442,23 @@
   .docs-section--split .docs-figure,
   .docs-section__copy,
   .history-note,
-  .rules-grid {
+  .rules-grid,
+  .billing-cycle,
+  .docs-callout,
+  .management-options,
+  .payment-scenarios,
+  .credit-consumption,
+  .action-reference {
     grid-column: 1;
+  }
+
+  .credit-consumption {
+    grid-template-columns: 1fr;
+  }
+
+  .credit-consumption > i {
+    transform: rotate(90deg);
+    justify-self: center;
   }
 
   .behavior-strip {
