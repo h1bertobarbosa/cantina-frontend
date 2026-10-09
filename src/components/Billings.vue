@@ -373,8 +373,10 @@
                 currency="BRL"
                 locale="pt-BR"
                 :min="0.01"
+                :min-fraction-digits="2"
                 :max-fraction-digits="2"
                 :disabled="savingManagement"
+                @keydown="handleCurrencyDecimalKey"
               />
             </div>
             <div
@@ -463,8 +465,10 @@
                   currency="BRL"
                   locale="pt-BR"
                   :min="0.01"
+                  :min-fraction-digits="2"
                   :max-fraction-digits="2"
                   :disabled="savingManagement"
+                  @keydown="handleCurrencyDecimalKey"
                 />
               </div>
               <Button
@@ -635,8 +639,10 @@
             currency="BRL"
             locale="pt-BR"
             :min="0"
+            :min-fraction-digits="2"
             :max-fraction-digits="2"
             :disabled="savingCreateBilling"
+            @keydown="handleCurrencyDecimalKey"
           />
         </div>
         <Message
@@ -850,6 +856,7 @@
               :max-fraction-digits="2"
               fluid
               :invalid="Boolean(payFormErrors.amount)"
+              @keydown="handleCurrencyDecimalKey"
             />
             <small
               v-if="payFormErrors.amount"
@@ -1240,6 +1247,7 @@
                 :max-fraction-digits="2"
                 fluid
                 :invalid="Boolean(manualBillingFormErrors.amount)"
+                @keydown="handleCurrencyDecimalKey"
               />
               <small
                 v-if="manualBillingFormErrors.amount"
@@ -1666,6 +1674,25 @@ const currency = (value) => {
     style: 'currency',
     currency: 'BRL',
   });
+};
+
+const replaceInputSelection = (input, value) => {
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? start;
+  input.setRangeText(value, start, end, 'end');
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+};
+
+const handleCurrencyDecimalKey = (event) => {
+  if (
+    !['.', 'Decimal'].includes(event.key) ||
+    !(event.target instanceof HTMLInputElement)
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  replaceInputSelection(event.target, ',');
 };
 
 const formatDateLabel = (value, fallback = 'N/A') => {
